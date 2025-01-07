@@ -57,6 +57,8 @@ const TestProject = () => {
     { key: 1, step: 1, name: "", action: "", config: "" },
   ]);
   const [editingKey, setEditingKey] = useState(null);
+  const [originalData, setOriginalData] = useState(null);
+  const [savedConfigs, setSavedConfigs] = useState({});
 
   const handleConfigName = (action) => {
     if (configFieldsMap[action]) {
@@ -131,6 +133,19 @@ const TestProject = () => {
     setStages((prevStages) =>
       prevStages.map((stage) => {
         if (stage.key === key) {
+          if (field === "action") {
+            setSavedConfigs((prevConfigs) => ({
+              ...prevConfigs,
+              [key]: {
+                ...(prevConfigs[key] || {}),
+                [stage.action]: stage.config,
+              },
+            }));
+
+            const restoredConfig = savedConfigs[key]?.[value] || {};
+
+            return { ...stage, [field]: value, config: restoredConfig };
+          }
           if (field === "config") {
             const newConfig = {
               ...(typeof stage.config === "object" && stage.config
@@ -150,25 +165,40 @@ const TestProject = () => {
   const isEditing = (key) => editingKey === key;
 
   const handleEdit = (key) => {
-    console.log(key);
-
-    setEditingKey(key);
+    if (key !== editingKey) {
+      const currentStage = stages.find((stage) => stage.key === key);
+      setOriginalData({ ...currentStage });
+      setEditingKey(key);
+    }
   };
 
   const handleSave = (data) => {
-    setEditingKey(null);
+    if (editingKey !== null) {
+      setEditingKey(null);
+      setOriginalData(null);
+      setSavedConfigs({});
+    }
   };
 
   const handleCancel = () => {
-    const isNewStageEmpty = stages.some(
-      (stage) => stage.key === editingKey && !stage.action && !stage.config
-    );
+    if (editingKey !== null) {
+      const isNewStageEmpty = stages.some(
+        (stage) => stage.key === editingKey && !stage.action && !stage.config
+      );
 
-    if (isNewStageEmpty) {
-      handleDeleteStage(editingKey);
+      if (isNewStageEmpty) {
+        handleDeleteStage(editingKey);
+      } else if (originalData) {
+        const updatedStages = stages.map((stage) =>
+          stage.key === editingKey ? originalData : stage
+        );
+        setStages(updatedStages);
+      }
+
+      setEditingKey(null);
+      setOriginalData(null);
+      setSavedConfigs({});
     }
-
-    setEditingKey(null);
   };
 
   const handleDeleteStage = (key) => {
@@ -216,7 +246,6 @@ const TestProject = () => {
       stages: formattedStages,
     };
 
-    console.log(stages.map);
     const jsonContent = JSON.stringify(pipeline, null, 4);
 
     const blob = new Blob([jsonContent], { type: "application/json" });
