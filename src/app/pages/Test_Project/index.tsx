@@ -235,7 +235,10 @@ const TestProject = () => {
     }
 
     const formattedStages = data.map((stage: any) => ({
-      name: stage.name || "",
+      name:
+        typeof stage.name === "object" && stage.name !== null
+          ? stage.name.name
+          : stage.name || "",
       type: stage.action || "",
       config: {
         ...stage.config,
@@ -382,9 +385,16 @@ const TestProject = () => {
     <div className="m-5">
       <div className="mb-4">
         <Button
+          onClick={() => handleExport(stages)}
+          disabled={editingKey !== null}
+          style={{ marginRight: 8 }}
+        >
+          Export To Json
+        </Button>
+        <Button
           type="primary"
           onClick={handleNewStage}
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 8 }}
         >
           Add New Stage
         </Button>
@@ -393,7 +403,9 @@ const TestProject = () => {
           beforeUpload={handleUpload}
           showUploadList={false}
         >
-          <Button icon={<UploadOutlined />}>Click to Upload</Button>
+          <Button icon={<UploadOutlined />} style={{ marginRight: 8 }}>
+            Click to Upload
+          </Button>
         </Upload>
       </div>
       <Table
