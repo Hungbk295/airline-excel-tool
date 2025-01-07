@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  padding: 0;
+  margin: 0;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #ffffff;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #c4c4c4;
+    border-radius: 20px;
+  }
+}
+.ant-form-item {
+  margin-bottom: 8px !important;
+}
+th.ant-table-cell {
+  border-top: 2px gray solid;
+  background-color: #e8e8e8 !important;
+}
+
+/* Căn cách dấu ':' 1 đoạn và dãn dòng */
+.config-item strong {
+  margin-right: 10px; /* Cách dấu ':' */
+}
+
+.config-item {
+  line-height: 5; 
+}
+
+.config-form .ant-form-item {
+  margin-bottom: 16px; /* Cách các Form.Item */
+}
