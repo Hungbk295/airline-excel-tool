@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Button, Input, Select, Form, Upload, Typography } from "antd";
-import { QuestionCircleTwoTone, UploadOutlined } from "@ant-design/icons";
-import { log } from "console";
-
+import {
+  CheckCircleOutlined,
+  CheckOutlined,
+  QuestionCircleTwoTone,
+  SwapOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 const { Option } = Select;
 const { Text } = Typography;
 
@@ -28,8 +32,8 @@ const configFieldsMap = {
     "toWorkbook",
     "fromSheet",
     "toSheet",
-    "fromRange",
-    "toRange",
+    "fromRange" || "$fromRange",
+    "toRange" || "$toFromRange",
     "skipBlanks",
   ],
   AUTO_FILL: ["workbook", "sheet", "fromRange", "toRange", "selectMultiItems"],
@@ -54,16 +58,24 @@ const configFieldsMap = {
 
 const TestProject = () => {
   const [stages, setStages] = useState([
-    { key: 1, step: 1, name: "", action: "", config: "" },
+    {
+      key: 1,
+      step: 1,
+      name: "",
+      type: "",
+      artifactKey: { inputArtifact: "", outputArtifact: "" },
+      config: "",
+    },
   ]);
   const [editingKey, setEditingKey] = useState(null);
   const [originalData, setOriginalData] = useState(null);
   const [savedConfigs, setSavedConfigs] = useState({});
+  const [listOutputArtifact, setListOutputArtifact] = useState([]);
 
-  const handleConfigName = (action) => {
-    if (configFieldsMap[action]) {
-      const fields = configFieldsMap[action];
-      const prefix = action.split("_")[0].toLowerCase();
+  const handleConfigName = (type) => {
+    if (configFieldsMap[type]) {
+      const fields = configFieldsMap[type];
+      const prefix = type.split("_")[0].toLowerCase();
 
       return { name: prefix, fields };
     }
@@ -83,11 +95,21 @@ const TestProject = () => {
               key: Date.now() + index,
               step: index + 1,
               name: stage.name || handleConfigName(stage.type),
-              action: stage.type || "",
-              config: stage.config || "",
+              type: stage.type || "",
+              config: Object.keys(stage.config || {}).reduce((acc, key) => {
+                if (key.startsWith("$")) {
+                  const baseKey = key.slice(1);
+                  acc[key] = stage.config[key];
+                  delete acc[baseKey];
+                } else if (!stage.config[`$${key}`]) {
+                  acc[key] = stage.config[key];
+                }
+                return acc;
+              }, {}),
+              artifactKey: stage.artifactKey || "",
             }));
             setStages(formattedStages);
-            setEditingKey(formattedStages[0]?.key || null);
+            setEditingKey(null);
           } else {
             console.error('Invalid JSON structure: Missing "stages" array');
           }
@@ -103,7 +125,16 @@ const TestProject = () => {
   };
 
   const handleNewStage = () => {
-    setStages([{ key: 1, step: 1, name: " ", action: "", config: "" }]);
+    setStages([
+      {
+        key: 1,
+        step: 1,
+        name: " ",
+        type: "",
+        artifactKey: { inputArtifact: "", outputArtifact: " " },
+        config: "",
+      },
+    ]);
     setEditingKey(1);
   };
 
@@ -113,7 +144,8 @@ const TestProject = () => {
       key: index,
       step: index + 0.5,
       name: "",
-      action: "",
+      type: "",
+      artifactKey: { inputArtifact: "", outputArtifact: "" },
       config: "",
     };
 
@@ -130,15 +162,17 @@ const TestProject = () => {
   };
 
   const handleUpdateStage = (key, field, value) => {
+    console.log(value);
+
     setStages((prevStages) =>
       prevStages.map((stage) => {
         if (stage.key === key) {
-          if (field === "action") {
+          if (field === "type") {
             setSavedConfigs((prevConfigs) => ({
               ...prevConfigs,
               [key]: {
                 ...(prevConfigs[key] || {}),
-                [stage.action]: stage.config,
+                [stage.type]: stage.config,
               },
             }));
 
@@ -146,6 +180,7 @@ const TestProject = () => {
 
             return { ...stage, [field]: value, config: restoredConfig };
           }
+
           if (field === "config") {
             const newConfig = {
               ...(typeof stage.config === "object" && stage.config
@@ -154,6 +189,16 @@ const TestProject = () => {
               ...(typeof value === "object" && value ? value : {}),
             };
             return { ...stage, config: newConfig };
+          }
+
+          if (field === "artifactKey") {
+            return {
+              ...stage,
+              artifactKey: {
+                ...stage.artifactKey,
+                ...value,
+              },
+            };
           }
           return { ...stage, [field]: value };
         }
@@ -172,7 +217,7 @@ const TestProject = () => {
     }
   };
 
-  const handleSave = (data) => {
+  const handleSave = () => {
     if (editingKey !== null) {
       setEditingKey(null);
       setOriginalData(null);
@@ -183,7 +228,7 @@ const TestProject = () => {
   const handleCancel = () => {
     if (editingKey !== null) {
       const isNewStageEmpty = stages.some(
-        (stage) => stage.key === editingKey && !stage.action && !stage.config
+        (stage) => stage.key === editingKey && !stage.type && !stage.config
       );
 
       if (isNewStageEmpty) {
@@ -215,6 +260,49 @@ const TestProject = () => {
     });
   };
 
+  const handleInputArtifact = (record, val) => {
+    setStages((prevStages) =>
+      prevStages.map((stage) =>
+        stage.key === record.key
+          ? {
+              ...stage,
+              artifactKey: {
+                ...stage.artifactKey,
+                inputArtifact: val,
+              },
+            }
+          : stage
+      )
+    );
+  };
+
+  const handleOutputArtifact = (record) => {
+    const output = record.artifactKey.outputArtifact;
+    if (output) {
+      const parts = output.includes(":")
+        ? output.split(":").map((part) => part.trim())
+        : [output.trim()];
+
+      const firstNumber = parts[0].match(/\d+/)?.[0];
+
+      const secondNumber = parts[1]?.match(/\d+/)?.[0];
+
+      if (!firstNumber && !secondNumber) {
+        console.error("Invalid input: No valid numbers found.");
+        return "Invalid input";
+      }
+
+      const data =
+        firstNumber === secondNumber
+          ? [Number(firstNumber)]
+          : [Number(firstNumber || 0), Number(secondNumber || 0)];
+
+      console.log(data);
+
+      setListOutputArtifact(data);
+    }
+  };
+
   const handleExport = (input: any) => {
     let data;
 
@@ -239,7 +327,7 @@ const TestProject = () => {
         typeof stage.name === "object" && stage.name !== null
           ? stage.name.name
           : stage.name || "",
-      type: stage.action || "",
+      type: stage.type || "",
       config: {
         ...stage.config,
       },
@@ -269,25 +357,25 @@ const TestProject = () => {
       dataIndex: "name",
       key: "name",
       render: (_, record) => {
-        const groupedFields = handleConfigName(record.action);
+        const groupedFields = handleConfigName(record.type);
         return <Text>{groupedFields?.name || record.name}</Text>;
       },
     },
     {
-      title: "Action",
-      dataIndex: "action",
-      key: "action",
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
       render: (text, record) =>
         isEditing(record.key) ? (
           <Select
             value={text}
-            onChange={(value) => handleUpdateStage(record.key, "action", value)}
-            placeholder="Select action"
+            onChange={(value) => handleUpdateStage(record.key, "type", value)}
+            placeholder="Select type"
             style={{ width: "100%" }}
           >
-            {Object.keys(configFieldsMap).map((action) => (
-              <Option key={action} value={action}>
-                {action}
+            {Object.keys(configFieldsMap).map((type) => (
+              <Option key={type} value={type}>
+                {type}
               </Option>
             ))}
           </Select>
@@ -302,37 +390,152 @@ const TestProject = () => {
       render: (_, record) =>
         isEditing(record.key) ? (
           <Form layout="vertical">
-            {configFieldsMap[record.action]?.map((field) => (
-              <Form.Item label={field} key={field}>
-                <Input
-                  value={record.config?.[field] || ""}
-                  onChange={(e) =>
-                    handleUpdateStage(record.key, "config", {
-                      ...record.config,
-                      [field]: e.target.value,
-                    })
-                  }
-                  placeholder={`Enter ${field}`}
-                />
+            {configFieldsMap[record.type]?.map((field) => (
+              <Form.Item
+                label={
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span>
+                      {record.config?.[`is${field}Set`] ? `$${field}` : field}
+                    </span>
+                    {["fromRange", "toRange"].includes(field) && (
+                      <Button
+                        type="link"
+                        icon={<CheckCircleOutlined />}
+                        onClick={() => {
+                          handleOutputArtifact(record);
+                          handleUpdateStage(record.key, "config", {
+                            ...record.config,
+                            [`is${field}Set`]:
+                              !record.config?.[`is${field}Set`],
+                          });
+                        }}
+                      />
+                    )}
+                  </div>
+                }
+                key={field}
+              >
+                {record.config?.[`is${field}Set`] ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text strong>{field === "fromRange" ? "From" : "To"}</Text>
+
+                    <Input
+                      placeholder="Enter Column"
+                      value={record.config?.[`${field}A`] || ""}
+                      onChange={(e) =>
+                        handleUpdateStage(record.key, "config", {
+                          ...record.config,
+                          [`${field}A`]: e.target.value,
+                        })
+                      }
+                      style={{ width: "40%" }}
+                    />
+                    <Text strong style={{ display: "flex" }}>
+                      index
+                    </Text>
+                    <Select
+                      placeholder="Select Row"
+                      style={{ width: "40%" }}
+                      onSelect={(val) => handleInputArtifact(record, val)}
+                      onChange={(value) =>
+                        handleUpdateStage(record.key, "config", {
+                          ...record.config,
+                          [`${field}B`]: value,
+                        })
+                      }
+                    >
+                      {listOutputArtifact.map((option, index) => (
+                        <Select.Option key={index} value={option}>
+                          {option.label}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </div>
+                ) : (
+                  <Input
+                    value={record.config?.[field] || ""}
+                    onChange={(e) =>
+                      handleUpdateStage(record.key, "config", {
+                        ...record.config,
+                        [field]: e.target.value,
+                      })
+                    }
+                    placeholder={`Enter ${field}`}
+                  />
+                )}
               </Form.Item>
             ))}
           </Form>
         ) : (
           <div>
-            {configFieldsMap[record.action]?.map((field) => (
+            {configFieldsMap[record.type]?.map((field) => (
               <div key={field} className="config-item">
-                <strong>{field}:</strong>{" "}
-                {typeof record.config?.[field] === "object"
-                  ? JSON.stringify(record.config[field])
-                  : (record.config?.[field] ?? "")}
+                <strong>
+                  {record.config?.[`is${field}Set`] ? `$${field}` : field}:
+                </strong>{" "}
+                {record.config?.[`is${field}Set`]
+                  ? `From ${record.config?.[`${field}A`] || ""} Index ${
+                      record.config?.[`${field}B`] || ""
+                    }`
+                  : record.config?.[field] || ""}
               </div>
             ))}
           </div>
         ),
     },
     {
-      title: "OutputArtifactKey",
-      key: "outputArtifactKey",
+      title: "ArtifactKey",
+      key: "ArtifactKey",
+      render: (_, record) =>
+        isEditing(record.key) ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Text strong>Input Artifact:</Text>
+              <Text>{record.artifactKey.inputArtifact || ""}</Text>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Text strong>Output Artifact:</Text>
+              <Input
+                placeholder="Enter output artifact"
+                value={record.artifactKey?.outputArtifact}
+                onChange={(e) =>
+                  handleUpdateStage(record.key, "artifactKey", {
+                    ...record.artifactKey,
+                    outputArtifact: e.target.value,
+                  })
+                }
+                style={{ width: "80%" }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Text strong>Input Artifact:</Text>
+              <Text>{record.artifactKey?.inputArtifact}</Text>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Text strong>Output Artifact:</Text>
+              <Text>{record.artifactKey?.outputArtifact || ""}</Text>
+            </div>
+          </div>
+        ),
+    },
+    {
+      title: "Modify",
+      key: "modify",
       render: (_, record) =>
         isEditing(record.key) ? (
           <>
@@ -380,6 +583,12 @@ const TestProject = () => {
         ),
     },
   ];
+
+  useEffect(() => {
+    if (listOutputArtifact && listOutputArtifact.length > 0) {
+      console.log("listOutputArtifact:", listOutputArtifact);
+    }
+  }, [listOutputArtifact]);
 
   return (
     <div className="m-5">
