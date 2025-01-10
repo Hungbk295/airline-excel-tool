@@ -3,6 +3,8 @@ import { Table, Button, Input, Select, Form, Upload, Typography } from "antd";
 import {
   CheckCircleOutlined,
   CheckOutlined,
+  CloseCircleOutlined,
+  CloseOutlined,
   QuestionCircleTwoTone,
   SwapOutlined,
   UploadOutlined,
@@ -162,8 +164,6 @@ const TestProject = () => {
   };
 
   const handleUpdateStage = (key, field, value) => {
-    console.log(value);
-
     setStages((prevStages) =>
       prevStages.map((stage) => {
         if (stage.key === key) {
@@ -260,7 +260,26 @@ const TestProject = () => {
     });
   };
 
-  const handleInputArtifact = (record, val) => {
+  const handleInputArtifact = (record) => {
+    const dataList = {
+      fromRangeA: record.config.fromRangeA || "",
+      fromRangeB: record.config.fromRangeB || "",
+      toRangeA: record.config.toRangeA || "",
+      toRangeB: record.config.toRangeB || "",
+    };
+    const exportString = [
+      dataList.fromRangeA && dataList.fromRangeB
+        ? `${dataList.fromRangeA}:${dataList.fromRangeB}`
+        : `${dataList.fromRangeB}`,
+      dataList.toRangeA && dataList.toRangeB
+        ? `${dataList.toRangeA}:${dataList.toRangeB}`
+        : `${dataList.toRangeB}`,
+    ]
+      .filter(Boolean)
+      .join(":");
+
+    console.log(exportString);
+
     setStages((prevStages) =>
       prevStages.map((stage) =>
         stage.key === record.key
@@ -268,7 +287,7 @@ const TestProject = () => {
               ...stage,
               artifactKey: {
                 ...stage.artifactKey,
-                inputArtifact: val,
+                inputArtifact: exportString,
               },
             }
           : stage
@@ -296,8 +315,6 @@ const TestProject = () => {
         firstNumber === secondNumber
           ? [Number(firstNumber)]
           : [Number(firstNumber || 0), Number(secondNumber || 0)];
-
-      console.log(data);
 
       setListOutputArtifact(data);
     }
@@ -347,8 +364,6 @@ const TestProject = () => {
     link.download = "pipeline.json";
     link.click();
     URL.revokeObjectURL(url);
-
-    console.log("Exported JSON:", jsonContent);
   };
 
   const columns = [
@@ -356,6 +371,7 @@ const TestProject = () => {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      width: "15%",
       render: (_, record) => {
         const groupedFields = handleConfigName(record.type);
         return <Text>{groupedFields?.name || record.name}</Text>;
@@ -365,6 +381,7 @@ const TestProject = () => {
       title: "Type",
       dataIndex: "type",
       key: "type",
+      width: "20%",
       render: (text, record) =>
         isEditing(record.key) ? (
           <Select
@@ -387,6 +404,7 @@ const TestProject = () => {
       title: "Config",
       dataIndex: "config",
       key: "config",
+      width: "25%",
       render: (_, record) =>
         isEditing(record.key) ? (
           <Form layout="vertical">
@@ -405,8 +423,9 @@ const TestProject = () => {
                     </span>
                     {["fromRange", "toRange"].includes(field) && (
                       <Button
+    t                    style={{ cursor: "pointer" }}
                         type="link"
-                        icon={<CheckCircleOutlined />}
+                        icon={record.config?.[`is${field}Set`] ? "❌" : "✔️"}
                         onClick={() => {
                           handleOutputArtifact(record);
                           handleUpdateStage(record.key, "config", {
@@ -448,13 +467,19 @@ const TestProject = () => {
                     <Select
                       placeholder="Select Row"
                       style={{ width: "40%" }}
-                      onSelect={(val) => handleInputArtifact(record, val)}
-                      onChange={(value) =>
-                        handleUpdateStage(record.key, "config", {
+                      onChange={(value) => {
+                        const updatedConfig = {
                           ...record.config,
                           [`${field}B`]: value,
-                        })
-                      }
+                        };
+
+                        handleUpdateStage(record.key, "config", updatedConfig);
+
+                        handleInputArtifact({
+                          ...record,
+                          config: updatedConfig,
+                        });
+                      }}
                     >
                       {listOutputArtifact.map((option, index) => (
                         <Select.Option key={index} value={option}>
@@ -498,6 +523,7 @@ const TestProject = () => {
     {
       title: "ArtifactKey",
       key: "ArtifactKey",
+      width: "20%",
       render: (_, record) =>
         isEditing(record.key) ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -516,7 +542,7 @@ const TestProject = () => {
                     outputArtifact: e.target.value,
                   })
                 }
-                style={{ width: "80%" }}
+                style={{ width: "70%" }}
               />
             </div>
           </div>
@@ -536,6 +562,7 @@ const TestProject = () => {
     {
       title: "Modify",
       key: "modify",
+      width: "20%",
       render: (_, record) =>
         isEditing(record.key) ? (
           <>
@@ -586,7 +613,6 @@ const TestProject = () => {
 
   useEffect(() => {
     if (listOutputArtifact && listOutputArtifact.length > 0) {
-      console.log("listOutputArtifact:", listOutputArtifact);
     }
   }, [listOutputArtifact]);
 
