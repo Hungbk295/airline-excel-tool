@@ -657,8 +657,8 @@ const TestProject = () => {
                     <Input
                       placeholder={`Input for $${field}`}
                       value={
-                        record.config?.[`data$${field}`] ||
-                        record.config?.[`data$${field}`]?.render
+                        record.config?.[`data$${field}`]?.render ||
+                        record.config?.[`data$${field}`]
                       }
                     />
                   </div>
