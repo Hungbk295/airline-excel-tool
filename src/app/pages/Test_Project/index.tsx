@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Input, Select, Form, Upload, Typography } from "antd";
+import {
+  Table,
+  Button,
+  Input,
+  Select,
+  Form,
+  Upload,
+  Typography,
+  Switch,
+} from "antd";
 import {
   CheckCircleOutlined,
   CheckOutlined,
@@ -9,6 +18,8 @@ import {
   SwapOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
+import { config } from "process";
+import { log } from "console";
 const { Option } = Select;
 const { Text } = Typography;
 
@@ -59,16 +70,17 @@ const configFieldsMap = {
 };
 
 const TestProject = () => {
-  const [stages, setStages] = useState([
+  const [stages, setStages] = useState<any>([
     {
       key: 1,
       step: 1,
       name: "",
       type: "",
       artifactKey: { inputArtifact: "", outputArtifact: "" },
-      config: "",
+      config: {},
     },
   ]);
+
   const [editingKey, setEditingKey] = useState(null);
   const [originalData, setOriginalData] = useState(null);
   const [savedConfigs, setSavedConfigs] = useState({});
@@ -92,6 +104,8 @@ const TestProject = () => {
         const result = e.target?.result;
         if (typeof result === "string") {
           const jsonData = JSON.parse(result);
+          console.log(jsonData);
+
           if (Array.isArray(jsonData.stages)) {
             const formattedStages = jsonData.stages.map((stage, index) => ({
               key: Date.now() + index,
@@ -99,7 +113,12 @@ const TestProject = () => {
               name: stage.name || handleConfigName(stage.type),
               type: stage.type || "",
               config: Object.keys(stage.config || {}).reduce((acc, key) => {
-                if (key.startsWith("$")) {
+                if (key === "skipBlanks") {
+                  acc[key] =
+                    typeof stage.config[key] === "string"
+                      ? stage.config[key]
+                      : String(stage.config[key] ?? "");
+                } else if (key.startsWith("$")) {
                   const baseKey = key.slice(1);
                   acc[key] = stage.config[key];
                   delete acc[baseKey];
@@ -110,6 +129,8 @@ const TestProject = () => {
               }, {}),
               artifactKey: stage.artifactKey || "",
             }));
+            console.log(formattedStages);
+
             setStages(formattedStages);
             setEditingKey(null);
           } else {
@@ -164,6 +185,7 @@ const TestProject = () => {
   };
 
   const handleUpdateStage = (key, field, value) => {
+    console.log(value);
     setStages((prevStages) =>
       prevStages.map((stage) => {
         if (stage.key === key) {
@@ -188,6 +210,7 @@ const TestProject = () => {
                 : {}),
               ...(typeof value === "object" && value ? value : {}),
             };
+
             return { ...stage, config: newConfig };
           }
 
@@ -200,6 +223,7 @@ const TestProject = () => {
               },
             };
           }
+
           return { ...stage, [field]: value };
         }
         return stage;
@@ -267,24 +291,39 @@ const TestProject = () => {
       toRangeA: record.config.toRangeA || "",
       toRangeB: record.config.toRangeB || "",
     };
-    const exportString = [
+    console.log(record);
+    const $fromRenderRange =
       dataList.fromRangeA && dataList.fromRangeB
         ? `${dataList.fromRangeA}:${dataList.fromRangeB}`
-        : `${dataList.fromRangeB}`,
+        : dataList.fromRangeA || dataList.fromRangeB;
+
+    const $toRenderRange =
       dataList.toRangeA && dataList.toRangeB
         ? `${dataList.toRangeA}:${dataList.toRangeB}`
-        : `${dataList.toRangeB}`,
-    ]
-      .filter(Boolean)
-      .join(":");
+        : dataList.toRangeA || dataList.toRangeB;
 
-    console.log(exportString);
+    const exportString = [$fromRenderRange, $toRenderRange]
+      .filter(Boolean)
+      .join(" : ");
 
     setStages((prevStages) =>
       prevStages.map((stage) =>
         stage.key === record.key
           ? {
               ...stage,
+              config: {
+                ...stage.config,
+                formRange: $fromRenderRange,
+                $datafromRange: {
+                  index: dataList.fromRangeB,
+                  render: $fromRenderRange,
+                },
+                toFormRange: $toRenderRange,
+                $datatoRange: {
+                  index: dataList.toRangeB,
+                  render: $toRenderRange,
+                },
+              },
               artifactKey: {
                 ...stage.artifactKey,
                 inputArtifact: exportString,
@@ -302,21 +341,7 @@ const TestProject = () => {
         ? output.split(":").map((part) => part.trim())
         : [output.trim()];
 
-      const firstNumber = parts[0].match(/\d+/)?.[0];
-
-      const secondNumber = parts[1]?.match(/\d+/)?.[0];
-
-      if (!firstNumber && !secondNumber) {
-        console.error("Invalid input: No valid numbers found.");
-        return "Invalid input";
-      }
-
-      const data =
-        firstNumber === secondNumber
-          ? [Number(firstNumber)]
-          : [Number(firstNumber || 0), Number(secondNumber || 0)];
-
-      setListOutputArtifact(data);
+      setListOutputArtifact(parts);
     }
   };
 
@@ -374,7 +399,9 @@ const TestProject = () => {
       width: "15%",
       render: (_, record) => {
         const groupedFields = handleConfigName(record.type);
-        return <Text>{groupedFields?.name || record.name}</Text>;
+        return (
+          <Text>{record.name != "" ? record.name : groupedFields?.name}</Text>
+        );
       },
     },
     {
@@ -419,19 +446,16 @@ const TestProject = () => {
                     }}
                   >
                     <span>
-                      {record.config?.[`is${field}Set`] ? `$${field}` : field}
+                      {record.config?.[`$${field}`] ? `$${field}` : field}
                     </span>
                     {["fromRange", "toRange"].includes(field) && (
-                      <Button
+                      <Switch
                         style={{ cursor: "pointer" }}
-                        type="link"
-                        icon={record.config?.[`is${field}Set`] ? "❌" : "✔️"}
                         onClick={() => {
                           handleOutputArtifact(record);
                           handleUpdateStage(record.key, "config", {
                             ...record.config,
-                            [`is${field}Set`]:
-                              !record.config?.[`is${field}Set`],
+                            [`$${field}`]: !record.config?.[`$${field}`],
                           });
                         }}
                       />
@@ -440,53 +464,178 @@ const TestProject = () => {
                 }
                 key={field}
               >
-                {record.config?.[`is${field}Set`] ? (
+                {field === "updateItems" ? (
+                  <div>
+                    {record.config?.updateItems?.map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "4px 0",
+                          borderBottom: "1px solid #ddd",
+                        }}
+                      >
+                        <div>
+                          <strong>Name:</strong>
+                          <Input
+                            value={item.name}
+                            onChange={(e) => {
+                              const updatedItems = [
+                                ...record.config.updateItems,
+                              ];
+                              updatedItems[index] = {
+                                ...item,
+                                name: e.target.value,
+                              };
+
+                              handleUpdateStage(record.key, "config", {
+                                ...record.config,
+                                updateItems: updatedItems,
+                              });
+                            }}
+                            style={{ width: "40%" }}
+                          />
+                        </div>
+                        <div>
+                          <strong>Visible:</strong>
+                          <Input
+                            value={item.visible ? "true" : "false"}
+                            onChange={(e) => {
+                              const updatedItems = [
+                                ...record.config.updateItems,
+                              ];
+                              updatedItems[index] = {
+                                ...item,
+                                visible: e.target.value === "true",
+                              };
+
+                              handleUpdateStage(record.key, "config", {
+                                ...record.config,
+                                updateItems: updatedItems,
+                              });
+                            }}
+                            style={{ width: "40%" }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : record.config?.[`$${field}`] ? (
                   <div
                     style={{
                       display: "flex",
+                      flexDirection: "column",
                       gap: "8px",
-                      alignItems: "center",
                     }}
                   >
-                    <Text strong>{field === "fromRange" ? "From" : "To"}</Text>
-
-                    <Input
-                      placeholder="Enter Column"
-                      value={record.config?.[`${field}A`] || ""}
-                      onChange={(e) =>
-                        handleUpdateStage(record.key, "config", {
-                          ...record.config,
-                          [`${field}A`]: e.target.value,
-                        })
-                      }
-                      style={{ width: "40%" }}
-                    />
-                    <Text strong style={{ display: "flex" }}>
-                      index
-                    </Text>
-                    <Select
-                      placeholder="Select Row"
-                      style={{ width: "40%" }}
-                      onChange={(value) => {
-                        const updatedConfig = {
-                          ...record.config,
-                          [`${field}B`]: value,
-                        };
-
-                        handleUpdateStage(record.key, "config", updatedConfig);
-
-                        handleInputArtifact({
-                          ...record,
-                          config: updatedConfig,
-                        });
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "center",
                       }}
                     >
-                      {listOutputArtifact.map((option, index) => (
-                        <Select.Option key={index} value={option}>
-                          {option.label}
-                        </Select.Option>
-                      ))}
-                    </Select>
+                      <Text strong>{"from"}</Text>
+                      <Input
+                        placeholder="Enter Column"
+                        value={record.config?.[`${field}A`] || ""}
+                        onChange={(e) =>
+                          handleUpdateStage(record.key, "config", {
+                            ...record.config,
+                            [`${field}A`]: e.target.value,
+                          })
+                        }
+                        style={{ width: "40%" }}
+                      />
+                      <Text strong style={{ display: "flex" }}>
+                        index
+                      </Text>
+                      <Select
+                        placeholder="Select Row"
+                        style={{ width: "40%" }}
+                        defaultValue={record.config?.[`$data${field}`]?.index}
+                        onChange={(value) => {
+                          const updatedConfig = {
+                            ...record.config,
+                            [`${field}B`]: value,
+                          };
+
+                          handleUpdateStage(
+                            record.key,
+                            "config",
+                            updatedConfig
+                          );
+
+                          handleInputArtifact({
+                            ...record,
+                            config: updatedConfig,
+                          });
+                        }}
+                      >
+                        {listOutputArtifact.map((option, index) => (
+                          <Select.Option key={index} value={option}>
+                            {option.label}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text strong>{"To"}</Text>
+                      <Input
+                        placeholder="Enter Column"
+                        value={record.config?.[`${field}to`] || ""}
+                        onChange={(e) =>
+                          handleUpdateStage(record.key, "config", {
+                            ...record.config,
+                            [`${field}to`]: e.target.value,
+                          })
+                        }
+                        style={{ width: "40%" }}
+                      />
+                      <Text strong style={{ display: "flex" }}>
+                        index
+                      </Text>
+                      <Select
+                        placeholder="Select Row"
+                        style={{ width: "40%" }}
+                        defaultValue={record.config?.[`$dataindex${field}`]?.index}
+                        onChange={(value) => {
+                          const updatedConfig = {
+                            ...record.config,
+                            [`${field}To_index`]: value,
+                          };
+
+                          handleUpdateStage(
+                            record.key,
+                            "config",
+                            updatedConfig
+                          );
+
+                          handleInputArtifact({
+                            ...record,
+                            config: updatedConfig,
+                          });
+                        }}
+                      >
+                        {listOutputArtifact.map((option, index) => (
+                          <Select.Option key={index} value={option}>
+                            {option.label}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </div>
+                    <Input
+                      placeholder={`Input for $${field}`}
+                      value={record.config?.[`$data${field}`]?.render || ""}
+                    />
                   </div>
                 ) : (
                   <Input
@@ -506,15 +655,49 @@ const TestProject = () => {
         ) : (
           <div>
             {configFieldsMap[record.type]?.map((field) => (
-              <div key={field} className="config-item">
-                <strong>
-                  {record.config?.[`is${field}Set`] ? `$${field}` : field}:
-                </strong>{" "}
-                {record.config?.[`is${field}Set`]
-                  ? `From ${record.config?.[`${field}A`] || ""} Index ${
-                      record.config?.[`${field}B`] || ""
-                    }`
-                  : record.config?.[field] || ""}
+              <div
+                key={field}
+                className="config-item"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "4px 0",
+                  borderBottom: "1px solid #ddd",
+                }}
+              >
+                <strong style={{ width: "50%" }}>
+                  {record.config?.[`$${field}`] ? `$${field}` : field}:
+                </strong>
+                {field === "updateItems" ? (
+                  <div>
+                    {record.config?.updateItems?.map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: "10px",
+                        }}
+                      >
+                        <span style={{ width: "50%" }}>
+                          <strong style={{ width: "50%" }}>Name:</strong>
+                          {item.name}
+                        </span>
+                        <span>
+                          <strong style={{ width: "50%" }}>Visible:</strong>
+                          {item.visible ? "true" : "false"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : record.config?.[`$${field}`] ? (
+                  `From ${record.config?.[`${field}A`] || ""} Index ${
+                    record.config?.[`${field}B`] || ""
+                  }`
+                ) : (
+                  record.config?.[field] || ""
+                )}
               </div>
             ))}
           </div>
