@@ -60,6 +60,28 @@ const configFieldsMap = {
   ],
 };
 
+const allFields = [
+  "workbook",
+  "sheet",
+  "range",
+  "fromRange",
+  "toRange",
+  "$fromRange",
+  "$toRange",
+  "skipBlanks",
+  "fromSheet",
+  "toSheet",
+  "fromWorkbook",
+  "toWorkbook",
+  "selectMultiItems",
+  "targetCol",
+  "dateTime",
+  "remove",
+  "visibleItems",
+  "updateItems",
+  "updateItem",
+];
+
 const TestProject = () => {
   const [stages, setStages] = useState<any>([
     {
@@ -291,28 +313,41 @@ const TestProject = () => {
       }
     }
 
-    const createRenderRange = (range) => {
+    const createRender = (range, type) => {
       const from = dataList[`${range}_from`];
       const fromIndex = dataList[`${range}_fromIndex`];
       const to = dataList[`${range}_to`];
       const toIndex = dataList[`${range}_toIndex`];
-      const fromPart =
-        from && fromIndex ? `${from}:${fromIndex}` : from || fromIndex;
-      const toPart = to && toIndex ? `${to}:${toIndex}` : to || toIndex;
 
-      return fromPart && toPart
-        ? `${fromPart} : ${toPart}`
-        : fromPart || toPart;
+      if (type == "range") {
+        const fromPart =
+          from && fromIndex ? `${from}:${fromIndex}` : from || fromIndex;
+        const toPart = to && toIndex ? `${to}:${toIndex}` : to || toIndex;
+
+        return fromPart && toPart
+          ? `${fromPart} : ${toPart}`
+          : fromPart || toPart;
+      }
+      if (type === "data") {
+        const fromOutput = fromIndex
+          ? `${from}{inputArtifact[${fromIndex}][${record.artifactKey?.outputArtifact || ""}] + 1}`
+          : "";
+        const toOutput = toIndex
+          ? `: ${to}{inputArtifact[${toIndex}][${record.artifactKey?.outputArtifact || ""}]}`
+          : "";
+
+        return `${fromOutput} ${toOutput}`;
+      }
     };
 
-    const $fromRenderRange = createRenderRange("fromRange");
-    const $toRenderRange = createRenderRange("toRange");
+    const $fromRenderRange = createRender("fromRange", "range");
+    const $toRenderRange = createRender("toRange", "range");
+    const $fromRenderData = createRender("fromRange", "data");
+    const $toRenderData = createRender("toRange", "data");
 
-    const exportString = [$fromRenderRange, $toRenderRange]
+    const exportInput = [$fromRenderRange, $toRenderRange]
       .filter(Boolean)
       .join(" : ");
-
-    console.log(record);
 
     setStages((prevStages) =>
       prevStages.map((stage) =>
@@ -325,18 +360,18 @@ const TestProject = () => {
                 data$fromRange: {
                   indexFrom: dataList["fromRange_fromIndex"],
                   indexTo: dataList["fromRange_toIndex"],
-                  render: $fromRenderRange,
+                  render: $fromRenderData,
                 },
                 toFormRange: $toRenderRange,
                 data$toRange: {
                   indexFrom: dataList["toRange_fromIndex"],
                   indexTo: dataList["toRange_toIndex"],
-                  render: $toRenderRange,
+                  render: $toRenderData,
                 },
               },
               artifactKey: {
                 ...stage.artifactKey,
-                inputArtifact: exportString,
+                inputArtifact: exportInput,
               },
             }
           : stage
@@ -382,16 +417,43 @@ const TestProject = () => {
       return;
     }
 
-    const formattedStages = data.map((stage: any) => ({
-      name:
+    console.log(data);
+
+    const formattedStages = data.map((stage: any) => {
+      const name =
         typeof stage.name === "object" && stage.name !== null
           ? stage.name.name
-          : stage.name || "",
-      type: stage.type || "",
-      config: {
-        ...stage.config,
-      },
-    }));
+          : stage.name || "";
+
+      const type = stage.type || "";
+      let config = stage.config
+        ? Object.fromEntries(
+            Object.entries(stage.config).filter(([key]) =>
+              allFields.includes(key)
+            )
+          )
+        : undefined;
+
+      ["$toRange", "$fromRange"].forEach((key) => {
+        if (stage.config?.[key] !== false) {
+          config = { ...config, [key]: stage.config?.[`data${key}`] };
+        }
+      });
+
+      const { inputArtifact, outputArtifact } = stage.artifactKey || {};
+
+      const filteredArtifacts = {
+        ...(inputArtifact ? { inputArtifact } : {}),
+        ...(outputArtifact ? { outputArtifact } : {}),
+      };
+
+      return {
+        ...(name && { name }),
+        ...(type && { type }),
+        ...(config && { config }),
+        ...filteredArtifacts,
+      };
+    });
 
     const pipeline = {
       stages: formattedStages,
@@ -838,7 +900,7 @@ const TestProject = () => {
         <Button
           type="primary"
           onClick={handleNewStage}
-          style={{ marginBottom: 8 }}
+          style={{ marginRight: 8 }}
         >
           Add New Stage
         </Button>
