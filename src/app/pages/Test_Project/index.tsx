@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -9,16 +9,7 @@ import {
   Typography,
   Switch,
 } from "antd";
-import {
-  CheckCircleOutlined,
-  CheckOutlined,
-  CloseCircleOutlined,
-  CloseOutlined,
-  QuestionCircleTwoTone,
-  SwapOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
-import { config } from "process";
+import { UploadOutlined } from "@ant-design/icons";
 import { log } from "console";
 const { Option } = Select;
 const { Text } = Typography;
@@ -104,8 +95,6 @@ const TestProject = () => {
         const result = e.target?.result;
         if (typeof result === "string") {
           const jsonData = JSON.parse(result);
-          console.log(jsonData);
-
           if (Array.isArray(jsonData.stages)) {
             const formattedStages = jsonData.stages.map((stage, index) => ({
               key: Date.now() + index,
@@ -129,8 +118,6 @@ const TestProject = () => {
               }, {}),
               artifactKey: stage.artifactKey || "",
             }));
-            console.log(formattedStages);
-
             setStages(formattedStages);
             setEditingKey(null);
           } else {
@@ -185,7 +172,6 @@ const TestProject = () => {
   };
 
   const handleUpdateStage = (key, field, value) => {
-    console.log(value);
     setStages((prevStages) =>
       prevStages.map((stage) => {
         if (stage.key === key) {
@@ -285,26 +271,39 @@ const TestProject = () => {
   };
 
   const handleInputArtifact = (record) => {
-    const dataList = {
-      fromRangeA: record.config.fromRangeA || "",
-      fromRangeB: record.config.fromRangeB || "",
-      toRangeA: record.config.toRangeA || "",
-      toRangeB: record.config.toRangeB || "",
-    };
-    console.log(record);
-    const $fromRenderRange =
-      dataList.fromRangeA && dataList.fromRangeB
-        ? `${dataList.fromRangeA}:${dataList.fromRangeB}`
-        : dataList.fromRangeA || dataList.fromRangeB;
+    const ranges = ["fromRange", "toRange"];
+    const suffixes = ["from", "fromIndex", "to", "toIndex"];
+    const dataList = {};
 
-    const $toRenderRange =
-      dataList.toRangeA && dataList.toRangeB
-        ? `${dataList.toRangeA}:${dataList.toRangeB}`
-        : dataList.toRangeA || dataList.toRangeB;
+    for (const range of ranges) {
+      for (const suffix of suffixes) {
+        const key = `${range}_${suffix}`;
+        dataList[key] = record.config[key] || "";
+      }
+    }
+
+    const createRenderRange = (range) => {
+      const from = dataList[`${range}_from`];
+      const fromIndex = dataList[`${range}_fromIndex`];
+      const to = dataList[`${range}_to`];
+      const toIndex = dataList[`${range}_toIndex`];
+      const fromPart =
+        from && fromIndex ? `${from}:${fromIndex}` : from || fromIndex;
+      const toPart = to && toIndex ? `${to}:${toIndex}` : to || toIndex;
+
+      return fromPart && toPart
+        ? `${fromPart} : ${toPart}`
+        : fromPart || toPart;
+    };
+
+    const $fromRenderRange = createRenderRange("fromRange");
+    const $toRenderRange = createRenderRange("toRange");
 
     const exportString = [$fromRenderRange, $toRenderRange]
       .filter(Boolean)
       .join(" : ");
+
+    console.log(record);
 
     setStages((prevStages) =>
       prevStages.map((stage) =>
@@ -315,12 +314,14 @@ const TestProject = () => {
                 ...stage.config,
                 formRange: $fromRenderRange,
                 $datafromRange: {
-                  index: dataList.fromRangeB,
+                  indexFrom: dataList["fromRange_fromIndex"],
+                  indexTo: dataList["fromRange_toIndex"],
                   render: $fromRenderRange,
                 },
                 toFormRange: $toRenderRange,
                 $datatoRange: {
-                  index: dataList.toRangeB,
+                  indexFrom: dataList["toRange_fromIndex"],
+                  indexTo: dataList["toRange_toIndex"],
                   render: $toRenderRange,
                 },
               },
@@ -540,11 +541,11 @@ const TestProject = () => {
                       <Text strong>{"from"}</Text>
                       <Input
                         placeholder="Enter Column"
-                        value={record.config?.[`${field}A`] || ""}
+                        value={record.config?.[`${field}_from`] || ""}
                         onChange={(e) =>
                           handleUpdateStage(record.key, "config", {
                             ...record.config,
-                            [`${field}A`]: e.target.value,
+                            [`${field}_from`]: e.target.value,
                           })
                         }
                         style={{ width: "40%" }}
@@ -559,7 +560,7 @@ const TestProject = () => {
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
-                            [`${field}B`]: value,
+                            [`${field}_fromIndex`]: value,
                           };
 
                           handleUpdateStage(
@@ -591,11 +592,11 @@ const TestProject = () => {
                       <Text strong>{"To"}</Text>
                       <Input
                         placeholder="Enter Column"
-                        value={record.config?.[`${field}to`] || ""}
+                        value={record.config?.[`${field}_to`] || ""}
                         onChange={(e) =>
                           handleUpdateStage(record.key, "config", {
                             ...record.config,
-                            [`${field}to`]: e.target.value,
+                            [`${field}_to`]: e.target.value,
                           })
                         }
                         style={{ width: "40%" }}
@@ -606,11 +607,13 @@ const TestProject = () => {
                       <Select
                         placeholder="Select Row"
                         style={{ width: "40%" }}
-                        defaultValue={record.config?.[`$dataindex${field}`]?.index}
+                        defaultValue={
+                          record.config?.[`$data${field}`]?.index
+                        }
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
-                            [`${field}To_index`]: value,
+                            [`${field}_toIndex`]: value,
                           };
 
                           handleUpdateStage(
@@ -634,7 +637,9 @@ const TestProject = () => {
                     </div>
                     <Input
                       placeholder={`Input for $${field}`}
-                      value={record.config?.[`$data${field}`]?.render || ""}
+                      value={
+                        record.config?.[`$data${field}`]?.render || ""
+                      }
                     />
                   </div>
                 ) : (
