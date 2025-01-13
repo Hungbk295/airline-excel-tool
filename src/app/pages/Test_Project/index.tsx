@@ -110,6 +110,8 @@ const TestProject = () => {
                 } else if (key.startsWith("$")) {
                   const baseKey = key.slice(1);
                   acc[key] = stage.config[key];
+                  acc[`data${key}`] = stage.config[key];
+
                   delete acc[baseKey];
                 } else if (!stage.config[`$${key}`]) {
                   acc[key] = stage.config[key];
@@ -118,6 +120,8 @@ const TestProject = () => {
               }, {}),
               artifactKey: stage.artifactKey || "",
             }));
+            console.log(formattedStages);
+
             setStages(formattedStages);
             setEditingKey(null);
           } else {
@@ -196,6 +200,7 @@ const TestProject = () => {
                 : {}),
               ...(typeof value === "object" && value ? value : {}),
             };
+            console.log(newConfig);
 
             return { ...stage, config: newConfig };
           }
@@ -227,7 +232,11 @@ const TestProject = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = (record) => {
+    if (record) {
+      handleOutputArtifact(record);
+    }
+
     if (editingKey !== null) {
       setEditingKey(null);
       setOriginalData(null);
@@ -313,13 +322,13 @@ const TestProject = () => {
               config: {
                 ...stage.config,
                 formRange: $fromRenderRange,
-                $datafromRange: {
+                data$fromRange: {
                   indexFrom: dataList["fromRange_fromIndex"],
                   indexTo: dataList["fromRange_toIndex"],
                   render: $fromRenderRange,
                 },
                 toFormRange: $toRenderRange,
-                $datatoRange: {
+                data$toRange: {
                   indexFrom: dataList["toRange_fromIndex"],
                   indexTo: dataList["toRange_toIndex"],
                   render: $toRenderRange,
@@ -338,11 +347,19 @@ const TestProject = () => {
   const handleOutputArtifact = (record) => {
     const output = record.artifactKey.outputArtifact;
     if (output) {
-      const parts = output.includes(":")
-        ? output.split(":").map((part) => part.trim())
+      const parts = output.includes(",")
+        ? output.split(",").map((part) => part.trim())
         : [output.trim()];
 
-      setListOutputArtifact(parts);
+      setListOutputArtifact((prevList) => {
+        const updatedList = [...prevList];
+        parts.forEach((part) => {
+          if (!updatedList.includes(part)) {
+            updatedList.push(part);
+          }
+        });
+        return updatedList;
+      });
     }
   };
 
@@ -451,7 +468,9 @@ const TestProject = () => {
                     </span>
                     {["fromRange", "toRange"].includes(field) && (
                       <Switch
+                        size="small"
                         style={{ cursor: "pointer" }}
+                        checked={record.config?.[`$${field}`] || false}
                         onClick={() => {
                           handleOutputArtifact(record);
                           handleUpdateStage(record.key, "config", {
@@ -542,12 +561,12 @@ const TestProject = () => {
                       <Input
                         placeholder="Enter Column"
                         value={record.config?.[`${field}_from`] || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           handleUpdateStage(record.key, "config", {
                             ...record.config,
                             [`${field}_from`]: e.target.value,
-                          })
-                        }
+                          });
+                        }}
                         style={{ width: "40%" }}
                       />
                       <Text strong style={{ display: "flex" }}>
@@ -557,7 +576,7 @@ const TestProject = () => {
                         placeholder="Select Row"
                         style={{ width: "40%" }}
                         defaultValue={
-                          record.config?.[`$data${field}`]?.indexFrom
+                          record.config?.[`data$${field}`]?.indexFrom
                         }
                         onChange={(value) => {
                           const updatedConfig = {
@@ -609,7 +628,7 @@ const TestProject = () => {
                       <Select
                         placeholder="Select Row"
                         style={{ width: "40%" }}
-                        defaultValue={record.config?.[`$data${field}`]?.indexTo}
+                        defaultValue={record.config?.[`data$${field}`]?.indexTo}
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
@@ -637,7 +656,10 @@ const TestProject = () => {
                     </div>
                     <Input
                       placeholder={`Input for $${field}`}
-                      value={record.config?.[`$data${field}`]?.render || ""}
+                      value={
+                        record.config?.[`data$${field}`] ||
+                        record.config?.[`data$${field}`]?.render
+                      }
                     />
                   </div>
                 ) : (
@@ -665,7 +687,7 @@ const TestProject = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "4px 0",
+                  padding: "4px ",
                   borderBottom: "1px solid #ddd",
                 }}
               >
@@ -695,9 +717,7 @@ const TestProject = () => {
                     ))}
                   </div>
                 ) : record.config?.[`$${field}`] ? (
-                  `From ${record.config?.[`${field}A`] || ""} Index ${
-                    record.config?.[`${field}B`] || ""
-                  }`
+                  record.config?.[`$${field}`] || ""
                 ) : (
                   record.config?.[field] || ""
                 )}
@@ -754,7 +774,7 @@ const TestProject = () => {
           <>
             <Button
               type="primary"
-              onClick={handleSave}
+              onClick={() => handleSave(record)}
               style={{ marginRight: 8 }}
             >
               Save
@@ -805,20 +825,6 @@ const TestProject = () => {
   return (
     <div className="m-5">
       <div className="mb-4">
-        <Button
-          onClick={() => handleExport(stages)}
-          disabled={editingKey !== null}
-          style={{ marginRight: 8 }}
-        >
-          Export To Json
-        </Button>
-        <Button
-          type="primary"
-          onClick={handleNewStage}
-          style={{ marginBottom: 8 }}
-        >
-          Add New Stage
-        </Button>
         <Upload
           accept=".json"
           beforeUpload={handleUpload}
@@ -828,6 +834,22 @@ const TestProject = () => {
             Click to Upload
           </Button>
         </Upload>
+
+        <Button
+          type="primary"
+          onClick={handleNewStage}
+          style={{ marginBottom: 8 }}
+        >
+          Add New Stage
+        </Button>
+
+        <Button
+          onClick={() => handleExport(stages)}
+          disabled={editingKey !== null}
+          style={{ marginRight: 8 }}
+        >
+          Export To Json
+        </Button>
       </div>
       <Table
         dataSource={stages}
