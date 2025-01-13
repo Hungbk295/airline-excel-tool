@@ -10,7 +10,6 @@ import {
   Switch,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { log } from "console";
 const { Option } = Select;
 const { Text } = Typography;
 
@@ -117,8 +116,6 @@ const TestProject = () => {
         const result = e.target?.result;
         if (typeof result === "string") {
           const jsonData = JSON.parse(result);
-          console.log(jsonData);
-
           if (Array.isArray(jsonData.stages)) {
             const formattedStages = jsonData.stages.map((stage, index) => ({
               key: Date.now() + index,
@@ -147,8 +144,6 @@ const TestProject = () => {
                 inputArtifact: stage.inputArtifactKey || null,
               },
             }));
-            console.log(formattedStages);
-
             setStages(formattedStages);
             setEditingKey(null);
           } else {
@@ -227,8 +222,6 @@ const TestProject = () => {
                 : {}),
               ...(typeof value === "object" && value ? value : {}),
             };
-            console.log(newConfig);
-
             return { ...stage, config: newConfig };
           }
 
@@ -317,8 +310,6 @@ const TestProject = () => {
         dataList[key] = record.config[key] || "";
       }
     }
-
-    console.log(record);
 
     const createRender = (range, type) => {
       const from = dataList[`${range}_from`];
@@ -426,8 +417,6 @@ const TestProject = () => {
       console.error("Invalid input: Must be a JSON string, object, or array.");
       return;
     }
-
-    console.log(data);
 
     const formattedStages = data.map((stage: any) => {
       const name =
