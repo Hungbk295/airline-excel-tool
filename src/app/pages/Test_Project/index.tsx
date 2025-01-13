@@ -117,6 +117,8 @@ const TestProject = () => {
         const result = e.target?.result;
         if (typeof result === "string") {
           const jsonData = JSON.parse(result);
+          console.log(jsonData);
+
           if (Array.isArray(jsonData.stages)) {
             const formattedStages = jsonData.stages.map((stage, index) => ({
               key: Date.now() + index,
@@ -140,7 +142,10 @@ const TestProject = () => {
                 }
                 return acc;
               }, {}),
-              artifactKey: stage.artifactKey || "",
+              artifactKey: {
+                outputArtifact: stage.outputArtifactKey || null,
+                inputArtifact: stage.inputArtifactKey || null,
+              },
             }));
             console.log(formattedStages);
 
@@ -313,6 +318,8 @@ const TestProject = () => {
       }
     }
 
+    console.log(record);
+
     const createRender = (range, type) => {
       const from = dataList[`${range}_from`];
       const fromIndex = dataList[`${range}_fromIndex`];
@@ -336,6 +343,9 @@ const TestProject = () => {
           ? `: ${to}{inputArtifact[${toIndex}][${record.artifactKey?.outputArtifact || ""}]}`
           : "";
 
+        if (!fromOutput && !toOutput) {
+          return record.config?.[`$${range}`];
+        }
         return `${fromOutput} ${toOutput}`;
       }
     };
@@ -476,7 +486,7 @@ const TestProject = () => {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      width: "15%",
+      width: "10%",
       render: (_, record) => {
         const groupedFields = handleConfigName(record.type);
         return (
@@ -511,7 +521,7 @@ const TestProject = () => {
       title: "Config",
       dataIndex: "config",
       key: "config",
-      width: "25%",
+      width: "35%",
       render: (_, record) =>
         isEditing(record.key) ? (
           <Form layout="vertical">
@@ -747,41 +757,45 @@ const TestProject = () => {
                 className="config-item"
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: "left",
                   justifyContent: "space-between",
-                  padding: "4px ",
                   borderBottom: "1px solid #ddd",
                 }}
               >
-                <strong style={{ width: "50%" }}>
+                <strong style={{ flexBasis: "30%", textAlign: "left" }}>
                   {record.config?.[`$${field}`] ? `$${field}` : field}:
                 </strong>
                 {field === "updateItems" ? (
-                  <div>
+                  <div style={{ flexBasis: "70%" }}>
                     {record.config?.updateItems?.map((item, index) => (
                       <div
                         key={index}
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          gap: "10px",
+                          gap: "5px",
+                          padding: "2px 0",
                         }}
                       >
-                        <span style={{ width: "50%" }}>
-                          <strong style={{ width: "50%" }}>Name:</strong>
-                          {item.name}
+                        <span style={{ flexBasis: "45%", textAlign: "left" }}>
+                          <strong>Name:</strong> {item.name}
                         </span>
-                        <span>
-                          <strong style={{ width: "50%" }}>Visible:</strong>
+                        <span style={{ flexBasis: "45%", textAlign: "left" }}>
+                          <strong>Visible:</strong>{" "}
                           {item.visible ? "true" : "false"}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : record.config?.[`$${field}`] ? (
-                  record.config?.[`$${field}`] || ""
+                  <div style={{ flexBasis: "70%", textAlign: "left" }}>
+                    {record.config?.[`data$${field}`]?.render ||
+                      record.config?.[`data$${field}`]}
+                  </div>
                 ) : (
-                  record.config?.[field] || ""
+                  <div style={{ flexBasis: "70%", textAlign: "left" }}>
+                    {record.config?.[field] || ""}
+                  </div>
                 )}
               </div>
             ))}
@@ -866,13 +880,6 @@ const TestProject = () => {
               style={{ marginRight: 8 }}
             >
               Add Step
-            </Button>
-            <Button
-              onClick={() => handleExport(record)}
-              disabled={editingKey !== null}
-              style={{ marginRight: 8 }}
-            >
-              Export To Json
             </Button>
           </>
         ),
