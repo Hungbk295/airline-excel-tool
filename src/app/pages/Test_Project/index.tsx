@@ -556,7 +556,9 @@ const TestProject = () => {
                       <Select
                         placeholder="Select Row"
                         style={{ width: "40%" }}
-                        defaultValue={record.config?.[`$data${field}`]?.index}
+                        defaultValue={
+                          record.config?.[`$data${field}`]?.indexFrom
+                        }
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
@@ -607,9 +609,7 @@ const TestProject = () => {
                       <Select
                         placeholder="Select Row"
                         style={{ width: "40%" }}
-                        defaultValue={
-                          record.config?.[`$data${field}`]?.index
-                        }
+                        defaultValue={record.config?.[`$data${field}`]?.indexTo}
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
@@ -637,9 +637,7 @@ const TestProject = () => {
                     </div>
                     <Input
                       placeholder={`Input for $${field}`}
-                      value={
-                        record.config?.[`$data${field}`]?.render || ""
-                      }
+                      value={record.config?.[`$data${field}`]?.render || ""}
                     />
                   </div>
                 ) : (
