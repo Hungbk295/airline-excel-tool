@@ -421,7 +421,13 @@ const TestProject = () => {
 
       ["$toRange", "$fromRange"].forEach((key) => {
         if (stage.config?.[key] !== false) {
-          config = { ...config, [key]: stage.config?.[`data${key}`] };
+          if (stage.config?.[`data${key}`]?.render) {
+            config = { ...config, [key]: stage.config?.[`data${key}`].render };
+            console.log(config);
+          } else {
+            config = { ...config, [key]: stage.config?.[`data${key}`] };
+            console.log(config, "");
+          }
         }
       });
 
