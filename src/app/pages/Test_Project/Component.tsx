@@ -28,7 +28,7 @@ interface IProps {
   handleUpload: (file: File) => boolean;
   handleExport: (input) => void;
   handleConfigName: (type) => { name; fields };
-  handleInputArtifact: (record) => void;
+  handleInputRange: (record) => void;
   handleOutputArtifact: (record) => void;
 }
 
@@ -50,7 +50,7 @@ function TableComponent(props: IProps) {
     handleUpload,
     handleExport,
     handleConfigName,
-    handleInputArtifact,
+    handleInputRange,
     handleOutputArtifact,
   } = props;
 
@@ -234,7 +234,7 @@ function TableComponent(props: IProps) {
                             updatedConfig
                           );
 
-                          handleInputArtifact({
+                          handleInputRange({
                             ...record,
                             config: updatedConfig,
                           });
@@ -285,7 +285,7 @@ function TableComponent(props: IProps) {
                             updatedConfig
                           );
 
-                          handleInputArtifact({
+                          handleInputRange({
                             ...record,
                             config: updatedConfig,
                           });
@@ -387,7 +387,33 @@ function TableComponent(props: IProps) {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Text strong>Input Artifact:</Text>
-              <Text>{record.artifactKey.inputArtifact || ""}</Text>
+              <Select
+                placeholder="Select Row"
+                style={{ width: "40%" }}
+                mode={"multiple"}
+                defaultValue={
+                  record.artifactKey?.inputArtifact
+                    ? Array.from(new Set(record.artifactKey.inputArtifact))
+                    : []
+                }
+                onClick={() => handleOutputArtifact(record)}
+                allowClear={
+                  record.artifactKey?.inputArtifact == "" ||
+                  !!record.artifactKey?.inputArtifact
+                }
+                onChange={(value) => {
+                  handleUpdateStage(record.key, "artifactKey", {
+                    ...record.artifactKey,
+                    inputArtifact: value,
+                  });
+                }}
+              >
+                {listOutputArtifact.map((option, index) => (
+                  <Select.Option key={index} value={option}>
+                    {option.label}
+                  </Select.Option>
+                ))}
+              </Select>{" "}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Text strong>Output Artifact:</Text>
@@ -408,7 +434,11 @@ function TableComponent(props: IProps) {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Text strong>Input Artifact:</Text>
-              <Text>{record.artifactKey?.inputArtifact}</Text>
+              <Text>
+                {Array.isArray(record.artifactKey?.inputArtifact)
+                  ? record.artifactKey.inputArtifact.join(", ")
+                  : record.artifactKey?.inputArtifact}
+              </Text>{" "}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Text strong>Output Artifact:</Text>

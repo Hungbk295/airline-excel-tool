@@ -227,7 +227,7 @@ const TestProject = () => {
     });
   };
 
-  const handleInputArtifact = (record) => {
+  const handleInputRange = (record) => {
     const ranges = ["fromRange", "toRange"];
     const suffixes = ["from", "fromIndex", "to", "toIndex"];
     const dataList = {};
@@ -245,21 +245,12 @@ const TestProject = () => {
       const to = dataList[`${range}_to`];
       const toIndex = dataList[`${range}_toIndex`];
 
-      if (type == "range") {
-        const fromPart =
-          from && fromIndex ? `${from}:${fromIndex}` : from || fromIndex;
-        const toPart = to && toIndex ? `${to}:${toIndex}` : to || toIndex;
-
-        return fromPart && toPart
-          ? `${fromPart} : ${toPart}`
-          : fromPart || toPart;
-      }
       if (type === "data") {
         const fromOutput = fromIndex
-          ? `${from}{inputArtifact[${fromIndex}][${record.artifactKey?.outputArtifact || ""}] + 1}`
+          ? `${from}{inputArtifact[${fromIndex}]['output'] + 1}`
           : "";
         const toOutput = toIndex
-          ? `: ${to}{inputArtifact[${toIndex}][${record.artifactKey?.outputArtifact || ""}]}`
+          ? `: ${to}{inputArtifact[${toIndex}]['output']}`
           : "";
 
         if (!fromOutput && !toOutput) {
@@ -269,14 +260,8 @@ const TestProject = () => {
       }
     };
 
-    const $fromRenderRange = createRender("fromRange", "range");
-    const $toRenderRange = createRender("toRange", "range");
     const $fromRenderData = createRender("fromRange", "data");
     const $toRenderData = createRender("toRange", "data");
-
-    const exportInput = [$fromRenderRange, $toRenderRange]
-      .filter(Boolean)
-      .join(" : ");
 
     setStages((prevStages) =>
       prevStages.map((stage) =>
@@ -285,13 +270,11 @@ const TestProject = () => {
               ...stage,
               config: {
                 ...stage.config,
-                formRange: $fromRenderRange,
                 data$fromRange: {
                   indexFrom: dataList["fromRange_fromIndex"],
                   indexTo: dataList["fromRange_toIndex"],
                   render: $fromRenderData,
                 },
-                toFormRange: $toRenderRange,
                 data$toRange: {
                   indexFrom: dataList["toRange_fromIndex"],
                   indexTo: dataList["toRange_toIndex"],
@@ -300,7 +283,6 @@ const TestProject = () => {
               },
               artifactKey: {
                 ...stage.artifactKey,
-                inputArtifact: exportInput,
               },
             }
           : stage
@@ -419,7 +401,7 @@ const TestProject = () => {
       handleUpload={handleUpload}
       handleExport={handleExport}
       handleConfigName={handleConfigName}
-      handleInputArtifact={handleInputArtifact}
+      handleInputRange={handleInputRange}
       handleOutputArtifact={handleOutputArtifact}
     />
   );
