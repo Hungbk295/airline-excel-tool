@@ -61,9 +61,31 @@ function TableComponent(props: IProps) {
       key: "name",
       width: "10%",
       render: (_, record) => {
-        const groupedFields = handleConfigName(record.type);
-        return (
-          <Text>{record.name != "" ? record.name : groupedFields?.name}</Text>
+        if (!record.originalType) {
+          record.originalType = record.type;
+        }
+        return editingKey === record.key ? (
+          record.type !== record.originalType ? (
+            <Input
+              value={handleConfigName(record.type)?.name}
+              onChange={(e) =>
+                handleUpdateStage(record.key, "name", e.target.value)
+              }
+            />
+          ) : (
+            <Input
+              value={
+                record.name != ""
+                  ? record.name
+                  : handleConfigName(record.type)?.name
+              }
+              onChange={(e) =>
+                handleUpdateStage(record.key, "name", e.target.value)
+              }
+            />
+          )
+        ) : (
+          <span>{record.name}</span>
         );
       },
     },

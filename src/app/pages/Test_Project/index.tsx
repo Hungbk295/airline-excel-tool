@@ -2,7 +2,6 @@ import { useState } from "react";
 import TableComponent from "./Component";
 import { allFields, configFieldsMap } from "../../../constants/testProject";
 
-
 const TestProject = () => {
   const [stages, setStages] = useState([
     {
@@ -39,33 +38,42 @@ const TestProject = () => {
         if (typeof result === "string") {
           const jsonData = JSON.parse(result);
           if (Array.isArray(jsonData.stages)) {
-            const formattedStages = jsonData.stages.map((stage, index) => ({
-              key: index,
-              step: index + 1,
-              name: stage.name || handleConfigName(stage.type),
-              type: stage.type || "",
-              config: Object.keys(stage.config || {}).reduce((acc, key) => {
-                if (key === "skipBlanks") {
-                  acc[key] =
-                    typeof stage.config[key] === "string"
-                      ? stage.config[key]
-                      : String(stage.config[key] ?? "");
-                } else if (key.startsWith("$")) {
-                  const baseKey = key.slice(1);
-                  acc[key] = stage.config[key];
-                  acc[`data${key}`] = stage.config[key];
+            const formattedStages = jsonData.stages.map((stage, index) => {
+              const formattedStage = {
+                key: index,
+                step: index + 1,
+                name: stage.name || handleConfigName(stage.type),
+                type: stage.type || "",
+                config: Object.keys(stage.config || {}).reduce((acc, key) => {
+                  if (key === "skipBlanks") {
+                    acc[key] =
+                      typeof stage.config[key] === "string"
+                        ? stage.config[key]
+                        : String(stage.config[key] ?? "");
+                  } else if (key.startsWith("$")) {
+                    const baseKey = key.slice(1);
+                    acc[key] = stage.config[key];
+                    acc[`data${key}`] = stage.config[key];
 
-                  delete acc[baseKey];
-                } else if (!stage.config[`$${key}`]) {
-                  acc[key] = stage.config[key];
-                }
-                return acc;
-              }, {}),
-              artifactKey: {
-                outputArtifact: stage.outputArtifactKey || null,
-                inputArtifact: stage.inputArtifactKey || null,
-              },
-            }));
+                    delete acc[baseKey];
+                  } else if (!stage.config[`$${key}`]) {
+                    acc[key] = stage.config[key];
+                  }
+                  return acc;
+                }, {}),
+                artifactKey: {
+                  outputArtifact: stage.outputArtifactKey || null,
+                  inputArtifact: stage.inputArtifactKey || null,
+                },
+              };
+
+              if (formattedStage.artifactKey.outputArtifact) {
+                handleSave(formattedStage);
+              }
+
+              return formattedStage;
+            });
+
             setStages(formattedStages);
             setEditingKey(null);
           } else {
