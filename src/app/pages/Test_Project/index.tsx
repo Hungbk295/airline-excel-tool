@@ -1,8 +1,5 @@
 import { useState } from "react";
-import { Select, Typography } from "antd";
 import TableComponent from "./Component";
-const { Option } = Select;
-const { Text } = Typography;
 
 const configFieldsMap = {
   SELECT: ["workbook", "sheet", "range"],
@@ -26,8 +23,8 @@ const configFieldsMap = {
     "toWorkbook",
     "fromSheet",
     "toSheet",
-    "fromRange" || "$fromRange",
-    "toRange" || "$toFromRange",
+    "fromRange",
+    "toRange",
     "skipBlanks",
   ],
   AUTO_FILL: ["workbook", "sheet", "fromRange", "toRange", "selectMultiItems"],
@@ -73,7 +70,7 @@ const allFields = [
 ];
 
 const TestProject = () => {
-  const [stages, setStages] = useState<any>([
+  const [stages, setStages] = useState([
     {
       key: 1,
       step: 1,
@@ -233,8 +230,6 @@ const TestProject = () => {
     );
   };
 
-  const isEditing = (key) => editingKey === key;
-
   const handleEdit = (key) => {
     if (key !== editingKey) {
       const currentStage = stages.find((stage) => stage.key === key);
@@ -390,7 +385,7 @@ const TestProject = () => {
     }
   };
 
-  const handleExport = (input: any) => {
+  const handleExport = (input) => {
     let data;
 
     if (typeof input === "string") {
@@ -409,7 +404,7 @@ const TestProject = () => {
       return;
     }
 
-    const formattedStages = data.map((stage: any) => {
+    const formattedStages = data.map((stage) => {
       const name =
         typeof stage.name === "object" && stage.name !== null
           ? stage.name.name

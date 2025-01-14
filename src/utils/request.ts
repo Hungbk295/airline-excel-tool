@@ -1,7 +1,7 @@
 import { notification } from "antd";
 import axios, { AxiosRequestConfig } from "axios";
 import { defaultTo, get } from "lodash";
-import { ERROR_MESSAGE, URL } from "../constants";
+import { ERROR_MESSAGE } from "../constants";
 import { store } from "../store";
 import { actionLogout } from "../store/authSlice";
 
@@ -26,7 +26,6 @@ instanceAxios.interceptors.response.use(
       notification.error({ message });
     }
 
-    const { url } = error.config;
     if (error.response.status === 401) {
       store.dispatch(actionLogout());
     }

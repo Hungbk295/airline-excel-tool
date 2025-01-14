@@ -13,28 +13,46 @@ import { UploadOutlined } from "@ant-design/icons";
 const { Option } = Select;
 const { Text } = Typography;
 
-const TableComponent = ({
-  stages,
-  editingKey,
-  configFieldsMap,
-  listOutputArtifact,
-  handleNewStage,
-  handleAddStage,
-  handleUpdateStage,
-  handleDeleteStage,
-  handleEdit,
-  handleSave,
-  handleCancel,
-  handleUpload,
-  handleExport,
-  handleConfigName,
-  handleInputArtifact,
-  handleOutputArtifact,
-}) => {
-  useEffect(() => {
-    if (listOutputArtifact && listOutputArtifact.length > 0) {
-    }
-  }, [listOutputArtifact]);
+interface IProps {
+  stages: any[];
+  editingKey: string;
+  configFieldsMap: { [key: string]: any };
+  listOutputArtifact: any[];
+  handleNewStage: () => void;
+  handleAddStage: (index) => void;
+  handleUpdateStage: (key, field, value) => void;
+  handleDeleteStage: (key) => void;
+  handleEdit: (key) => void;
+  handleSave: (record) => void;
+  handleCancel: () => void;
+  handleUpload: (file: File) => boolean;
+  handleExport: (input) => void;
+  handleConfigName: (type) => { name; fields };
+  handleInputArtifact: (record) => void;
+  handleOutputArtifact: (record) => void;
+}
+
+function TableComponent(props: IProps) {
+  useEffect(() => {}, [props.listOutputArtifact]);
+
+  const {
+    stages,
+    editingKey,
+    configFieldsMap,
+    listOutputArtifact,
+    handleNewStage,
+    handleAddStage,
+    handleUpdateStage,
+    handleDeleteStage,
+    handleEdit,
+    handleSave,
+    handleCancel,
+    handleUpload,
+    handleExport,
+    handleConfigName,
+    handleInputArtifact,
+    handleOutputArtifact,
+  } = props;
 
   const columns = [
     {
@@ -466,7 +484,6 @@ const TableComponent = ({
         >
           Add New Stage
         </Button>
-
         <Button
           onClick={() => handleExport(stages)}
           disabled={editingKey !== null}
@@ -484,6 +501,6 @@ const TableComponent = ({
       />
     </div>
   );
-};
+}
 
 export default TableComponent;

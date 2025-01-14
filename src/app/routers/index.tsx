@@ -1,10 +1,9 @@
-import { ReactElement, Suspense , lazy} from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { ReactElement, Suspense } from "react";
+import { Route, Routes } from "react-router-dom";
 import { URL } from "../../constants";
 import DefaultLayout from "../layouts/DefaultLayout";
 import Home from "../pages/Test_Project";
 const DEFAULT_LAYOUT = "default";
-
 
 interface ItemType {
   key: string;
@@ -20,7 +19,6 @@ const userItems: ItemType[] = [
     layout: DEFAULT_LAYOUT,
     private: false,
   },
-
 ];
 
 const adminItems: ItemType[] = [
@@ -29,8 +27,7 @@ const adminItems: ItemType[] = [
     components: <Home />,
     layout: DEFAULT_LAYOUT,
     private: true,
-  }
-
+  },
 ];
 
 const sharedItems: ItemType[] = [

@@ -1,23 +1,21 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AuthState {}
 
 const initialState: AuthState = {};
 
 export const slice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     actionLogout(state) {
       console.info(state);
-      // TODO: implement action logout
     },
   },
 
   extraReducers: (builder) => {
     console.info(builder);
-    // builder.
-    //   // LOGIN ADMIN
   },
 });
 
