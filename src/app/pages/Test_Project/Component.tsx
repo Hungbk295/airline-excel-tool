@@ -132,6 +132,7 @@ function TableComponent(props: IProps) {
                 {field === "updateItems" ? (
                   <div>
                     <Input
+                      placeholder="Enter Items"
                       defaultValue={
                         record.config.updateItems?.length
                           ? record.config.updateItems
