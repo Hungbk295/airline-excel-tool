@@ -148,9 +148,6 @@ function TableComponent(props: IProps) {
                         for (let i = 0; i < splitItems.length; i += 2) {
                           const name = splitItems[i]?.trim();
                           const visible = splitItems[i + 1]?.trim();
-
-                          console.log(visible);
-
                           if (name && visible !== undefined) {
                             updatedItems.push({
                               name,
