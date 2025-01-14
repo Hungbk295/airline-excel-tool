@@ -131,61 +131,40 @@ function TableComponent(props: IProps) {
               >
                 {field === "updateItems" ? (
                   <div>
-                    {record.config?.updateItems?.map((item, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "4px 0",
-                          borderBottom: "1px solid #ddd",
-                        }}
-                      >
-                        <div>
-                          <strong>Name:</strong>
-                          <Input
-                            value={item.name}
-                            onChange={(e) => {
-                              const updatedItems = [
-                                ...record.config.updateItems,
-                              ];
-                              updatedItems[index] = {
-                                ...item,
-                                name: e.target.value,
-                              };
+                    <Input
+                      defaultValue={
+                        record.config.updateItems?.length
+                          ? record.config.updateItems
+                              .map((item) => `${item.name} | ${item.visible}`)
+                              .join(" | ")
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const input = e.target.value;
+                        const splitItems = input.split("|");
+                        const updatedItems = [];
 
-                              handleUpdateStage(record.key, "config", {
-                                ...record.config,
-                                updateItems: updatedItems,
-                              });
-                            }}
-                            style={{ width: "40%" }}
-                          />
-                        </div>
-                        <div>
-                          <strong>Visible:</strong>
-                          <Input
-                            value={item.visible ? "true" : "false"}
-                            onChange={(e) => {
-                              const updatedItems = [
-                                ...record.config.updateItems,
-                              ];
-                              updatedItems[index] = {
-                                ...item,
-                                visible: e.target.value === "true",
-                              };
+                        for (let i = 0; i < splitItems.length; i += 2) {
+                          const name = splitItems[i]?.trim();
+                          const visible = splitItems[i + 1]?.trim();
 
-                              handleUpdateStage(record.key, "config", {
-                                ...record.config,
-                                updateItems: updatedItems,
-                              });
-                            }}
-                            style={{ width: "40%" }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                          console.log(visible);
+
+                          if (name && visible !== undefined) {
+                            updatedItems.push({
+                              name,
+                              visible,
+                            });
+                          }
+                        }
+
+                        handleUpdateStage(record.key, "config", {
+                          ...record.config,
+                          updateItems: updatedItems,
+                        });
+                      }}
+                      style={{ width: "100%" }}
+                    />
                   </div>
                 ) : record.config?.[`$${field}`] ? (
                   <div
@@ -359,8 +338,7 @@ function TableComponent(props: IProps) {
                           <strong>Name:</strong> {item.name}
                         </span>
                         <span style={{ flexBasis: "45%", textAlign: "left" }}>
-                          <strong>Visible:</strong>{" "}
-                          {item.visible ? "true" : "false"}
+                          <strong>Visible:</strong> {item.visible.toString()}
                         </span>
                       </div>
                     ))}
