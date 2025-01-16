@@ -198,6 +198,7 @@ function TableComponent(props: IProps) {
                             ...record.config,
                             [`${field}_from`]: e.target.value,
                           });
+                          handleInputRange(record);
                         }}
                         style={{ width: "40%" }}
                       />
@@ -210,6 +211,7 @@ function TableComponent(props: IProps) {
                         defaultValue={
                           record.config?.[`data$${field}`]?.indexFrom
                         }
+                        onClick={() => handleOutputArtifact(record)}
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
@@ -246,12 +248,14 @@ function TableComponent(props: IProps) {
                       <Input
                         placeholder="Enter Column"
                         value={record.config?.[`${field}_to`] || ""}
-                        onChange={(e) =>
+                        onClick={handleInputRange}
+                        onChange={(e) => {
                           handleUpdateStage(record.key, "config", {
                             ...record.config,
                             [`${field}_to`]: e.target.value,
-                          })
-                        }
+                          });
+                          handleInputRange(record);
+                        }}
                         style={{ width: "40%" }}
                       />
                       <Text strong style={{ display: "flex" }}>
@@ -260,6 +264,7 @@ function TableComponent(props: IProps) {
                       <Select
                         placeholder="Select Row"
                         style={{ width: "40%" }}
+                        onClick={() => handleOutputArtifact(record)}
                         defaultValue={record.config?.[`data$${field}`]?.indexTo}
                         onChange={(value) => {
                           const updatedConfig = {
@@ -498,7 +503,7 @@ function TableComponent(props: IProps) {
           onClick={handleNewStage}
           style={{ marginRight: 8 }}
         >
-          Add New Stage
+          Create New
         </Button>
         <Button
           onClick={() => handleExport(stages)}
