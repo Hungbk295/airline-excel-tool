@@ -189,7 +189,9 @@ function TableComponent(props: IProps) {
                         alignItems: "center",
                       }}
                     >
-                      <Text strong>{"from"}</Text>
+                      <Text style={{ width: "5%" }} strong>
+                        {"from"}
+                      </Text>
                       <Input
                         placeholder="Enter Column"
                         value={record.config?.[`${field}_from`] || ""}
@@ -198,8 +200,9 @@ function TableComponent(props: IProps) {
                             ...record.config,
                             [`${field}_from`]: e.target.value,
                           });
+                          handleInputRange(record);
                         }}
-                        style={{ width: "40%" }}
+                        style={{ width: "10%", flex: 1 }}
                       />
                       <Text strong style={{ display: "flex" }}>
                         index
@@ -210,6 +213,7 @@ function TableComponent(props: IProps) {
                         defaultValue={
                           record.config?.[`data$${field}`]?.indexFrom
                         }
+                        onClick={() => handleOutputArtifact(record)}
                         onChange={(value) => {
                           const updatedConfig = {
                             ...record.config,
@@ -242,17 +246,21 @@ function TableComponent(props: IProps) {
                         alignItems: "center",
                       }}
                     >
-                      <Text strong>{"To"}</Text>
+                      <Text style={{ width: "5%" }} strong>
+                        {"To"}
+                      </Text>
                       <Input
                         placeholder="Enter Column"
                         value={record.config?.[`${field}_to`] || ""}
-                        onChange={(e) =>
+                        onClick={handleInputRange}
+                        onChange={(e) => {
                           handleUpdateStage(record.key, "config", {
                             ...record.config,
                             [`${field}_to`]: e.target.value,
-                          })
-                        }
-                        style={{ width: "40%" }}
+                          });
+                          handleInputRange(record);
+                        }}
+                        style={{ width: "50%", flex: 1 }}
                       />
                       <Text strong style={{ display: "flex" }}>
                         index
@@ -260,6 +268,7 @@ function TableComponent(props: IProps) {
                       <Select
                         placeholder="Select Row"
                         style={{ width: "40%" }}
+                        onClick={() => handleOutputArtifact(record)}
                         defaultValue={record.config?.[`data$${field}`]?.indexTo}
                         onChange={(value) => {
                           const updatedConfig = {
@@ -498,7 +507,7 @@ function TableComponent(props: IProps) {
           onClick={handleNewStage}
           style={{ marginRight: 8 }}
         >
-          Add New Stage
+          Create New
         </Button>
         <Button
           onClick={() => handleExport(stages)}

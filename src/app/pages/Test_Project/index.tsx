@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TableComponent from "./Component";
 import { allFields, configFieldsMap } from "../../../constants/testProject";
+import { log } from "console";
 
 const TestProject = () => {
   const [stages, setStages] = useState([
@@ -231,63 +232,74 @@ const TestProject = () => {
     const ranges = ["fromRange", "toRange"];
     const suffixes = ["from", "fromIndex", "to", "toIndex"];
     const dataList = {};
-
     for (const range of ranges) {
       for (const suffix of suffixes) {
         const key = `${range}_${suffix}`;
-        dataList[key] = record.config[key] || "";
+        if (record?.config[key]) {
+          dataList[key] = record?.config[key] || "";
+        }
       }
     }
 
-    const createRender = (range, type) => {
-      const from = dataList[`${range}_from`];
+    const createRender = (range, from, to) => {
       const fromIndex = dataList[`${range}_fromIndex`];
-      const to = dataList[`${range}_to`];
       const toIndex = dataList[`${range}_toIndex`];
 
-      if (type === "data") {
-        const fromOutput = fromIndex
-          ? `${from}{inputArtifact[${fromIndex}]['output'] + 1}`
-          : "";
-        const toOutput = toIndex
-          ? `: ${to}{inputArtifact[${toIndex}]['output']}`
-          : "";
+      console.log(record.config);
 
-        if (!fromOutput && !toOutput) {
-          return record.config?.[`$${range}`];
-        }
-        return `${fromOutput} ${toOutput}`;
+      const fromOutput = fromIndex
+        ? `${from}{inputArtifact[${fromIndex}]['output'] + 1}`
+        : "";
+      const toOutput = toIndex
+        ? `: ${to}{inputArtifact[${toIndex}]['output']}`
+        : "";
+
+      if (!fromOutput && !toOutput) {
+        return record.config?.[`$${range}`];
       }
+      return `${fromOutput} ${toOutput}`;
     };
 
-    const $fromRenderData = createRender("fromRange", "data");
-    const $toRenderData = createRender("toRange", "data");
+    setStages((prevStages) => {
+      const updatedStages = prevStages.map((stage) => {
+        const fromRangeFrom = stage.config?.[`fromRange_from`] || "";
+        const fromRangeTo = stage.config?.[`fromRange_to`] || "";
+        const toRangeFrom = stage.config?.[`toRange_from`] || "";
+        const toRangeTo = stage.config?.[`toRange_to`] || "";
 
-    setStages((prevStages) =>
-      prevStages.map((stage) =>
-        stage.key === record.key
-          ? {
-              ...stage,
-              config: {
-                ...stage.config,
-                data$fromRange: {
-                  indexFrom: dataList["fromRange_fromIndex"],
-                  indexTo: dataList["fromRange_toIndex"],
-                  render: $fromRenderData,
-                },
-                data$toRange: {
-                  indexFrom: dataList["toRange_fromIndex"],
-                  indexTo: dataList["toRange_toIndex"],
-                  render: $toRenderData,
-                },
+        console.log(fromRangeFrom);
+        const $fromRenderData = createRender(
+          "fromRange",
+          fromRangeFrom,
+          fromRangeTo
+        );
+        const $toRenderData = createRender("toRange", toRangeFrom, toRangeTo);
+        if (stage.key === record.key) {
+          return {
+            ...stage,
+            config: {
+              ...stage.config,
+              data$fromRange: {
+                indexFrom: dataList["fromRange_fromIndex"] || null,
+                indexTo: dataList["fromRange_toIndex"] || null,
+                render: $fromRenderData || "",
               },
-              artifactKey: {
-                ...stage.artifactKey,
+              data$toRange: {
+                indexFrom: dataList["toRange_fromIndex"] || null,
+                indexTo: dataList["toRange_toIndex"] || null,
+                render: $toRenderData || "",
               },
-            }
-          : stage
-      )
-    );
+            },
+          };
+        }
+
+        return stage;
+      });
+
+      console.log("Updated stages in handleInputRange:", updatedStages);
+
+      return updatedStages;
+    });
   };
 
   const handleOutputArtifact = (record) => {
