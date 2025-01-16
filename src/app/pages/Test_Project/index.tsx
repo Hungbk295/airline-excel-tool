@@ -6,7 +6,6 @@ const TestProject = () => {
   const [stages, setStages] = useState([
     {
       key: 1,
-      step: 1,
       name: "",
       type: "",
       artifactKey: { inputArtifact: "", outputArtifact: "" },
@@ -40,8 +39,7 @@ const TestProject = () => {
           if (Array.isArray(jsonData.stages)) {
             const formattedStages = jsonData.stages.map((stage, index) => {
               const formattedStage = {
-                key: index,
-                step: index + 1,
+                key: index + 1,
                 name: stage.name || handleConfigName(stage.type),
                 type: stage.type || "",
                 config: Object.keys(stage.config || {}).reduce((acc, key) => {
@@ -94,7 +92,6 @@ const TestProject = () => {
     setStages([
       {
         key: 1,
-        step: 1,
         name: " ",
         type: "",
         artifactKey: { inputArtifact: "", outputArtifact: " " },
@@ -107,8 +104,7 @@ const TestProject = () => {
   const handleAddStage = (index) => {
     if (editingKey !== null) return;
     const newStage = {
-      key: index,
-      step: index + 0.5,
+      key: index + 1,
       name: "",
       type: "",
       artifactKey: { inputArtifact: "", outputArtifact: "" },
@@ -120,7 +116,7 @@ const TestProject = () => {
 
     const updatedStagesWithSteps = updatedStages.map((stage, idx) => ({
       ...stage,
-      step: idx + 1,
+      key: idx + 1,
     }));
 
     setStages(updatedStagesWithSteps);
@@ -141,8 +137,12 @@ const TestProject = () => {
             }));
 
             const restoredConfig = savedConfigs[key]?.[value] || {};
-
-            return { ...stage, [field]: value, config: restoredConfig };
+            return {
+              ...stage,
+              [field]: value,
+              config: restoredConfig,
+              name: handleConfigName(value)?.name,
+            };
           }
 
           if (field === "config") {
@@ -216,13 +216,13 @@ const TestProject = () => {
   const handleDeleteStage = (key) => {
     setStages((prevStages) => {
       const editingStage = prevStages.find((stage) => stage.key === key);
-      const editingStep = editingStage ? editingStage.step : null;
+      const editingKey = editingStage ? editingStage.key : null;
 
       return prevStages
         .filter((stage) => stage.key !== key)
         .map((stage) => ({
           ...stage,
-          step: stage.step > editingStep ? stage.step - 1 : stage.step,
+          step: stage.key > editingKey ? stage.key - 1 : stage.key,
         }));
     });
   };
@@ -347,10 +347,8 @@ const TestProject = () => {
         if (stage.config?.[key] !== false) {
           if (stage.config?.[`data${key}`]?.render) {
             config = { ...config, [key]: stage.config?.[`data${key}`].render };
-            console.log(config);
           } else {
             config = { ...config, [key]: stage.config?.[`data${key}`] };
-            console.log(config, "");
           }
         }
       });
