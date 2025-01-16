@@ -61,29 +61,17 @@ function TableComponent(props: IProps) {
       key: "name",
       width: "10%",
       render: (_, record) => {
-        if (!record.originalType) {
-          record.originalType = record.type;
-        }
         return editingKey === record.key ? (
-          record.type !== record.originalType ? (
-            <Input
-              value={handleConfigName(record.type)?.name}
-              onChange={(e) =>
-                handleUpdateStage(record.key, "name", e.target.value)
-              }
-            />
-          ) : (
-            <Input
-              value={
-                record.name != ""
-                  ? record.name
-                  : handleConfigName(record.type)?.name
-              }
-              onChange={(e) =>
-                handleUpdateStage(record.key, "name", e.target.value)
-              }
-            />
-          )
+          <Input
+            value={
+              record.name != ""
+                ? record.name
+                : handleConfigName(record.type)?.name
+            }
+            onChange={(e) =>
+              handleUpdateStage(record.key, "name", e.target.value)
+            }
+          />
         ) : (
           <span>{record.name}</span>
         );
@@ -481,7 +469,7 @@ function TableComponent(props: IProps) {
               Delete
             </Button>
             <Button
-              onClick={() => handleAddStage(record.step)}
+              onClick={() => handleAddStage(record.key)}
               disabled={editingKey !== null}
               style={{ marginRight: 8 }}
             >
