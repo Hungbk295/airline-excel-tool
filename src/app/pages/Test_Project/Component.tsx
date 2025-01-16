@@ -189,7 +189,9 @@ function TableComponent(props: IProps) {
                         alignItems: "center",
                       }}
                     >
-                      <Text strong>{"from"}</Text>
+                      <Text style={{ width: "5%" }} strong>
+                        {"from"}
+                      </Text>
                       <Input
                         placeholder="Enter Column"
                         value={record.config?.[`${field}_from`] || ""}
@@ -200,7 +202,7 @@ function TableComponent(props: IProps) {
                           });
                           handleInputRange(record);
                         }}
-                        style={{ width: "40%" }}
+                        style={{ width: "10%", flex: 1 }}
                       />
                       <Text strong style={{ display: "flex" }}>
                         index
@@ -244,7 +246,9 @@ function TableComponent(props: IProps) {
                         alignItems: "center",
                       }}
                     >
-                      <Text strong>{"To"}</Text>
+                      <Text style={{ width: "5%" }} strong>
+                        {"To"}
+                      </Text>
                       <Input
                         placeholder="Enter Column"
                         value={record.config?.[`${field}_to`] || ""}
@@ -256,7 +260,7 @@ function TableComponent(props: IProps) {
                           });
                           handleInputRange(record);
                         }}
-                        style={{ width: "40%" }}
+                        style={{ width: "50%", flex: 1 }}
                       />
                       <Text strong style={{ display: "flex" }}>
                         index
