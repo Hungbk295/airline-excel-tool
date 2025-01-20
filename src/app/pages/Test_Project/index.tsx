@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import TableComponent from "./Component";
 import { allFields, configFieldsMap } from "../../../constants/testProject";
-import { log } from "console";
 
 const TestProject = () => {
   const [stages, setStages] = useState([
@@ -244,9 +243,6 @@ const TestProject = () => {
     const createRender = (range, from, to) => {
       const fromIndex = dataList[`${range}_fromIndex`];
       const toIndex = dataList[`${range}_toIndex`];
-
-      console.log(record.config);
-
       const fromOutput = fromIndex
         ? `${from}{inputArtifact[${fromIndex}]['output'] + 1}`
         : "";
@@ -266,8 +262,6 @@ const TestProject = () => {
         const fromRangeTo = stage.config?.[`fromRange_to`] || "";
         const toRangeFrom = stage.config?.[`toRange_from`] || "";
         const toRangeTo = stage.config?.[`toRange_to`] || "";
-
-        console.log(fromRangeFrom);
         const $fromRenderData = createRender(
           "fromRange",
           fromRangeFrom,
@@ -295,8 +289,6 @@ const TestProject = () => {
 
         return stage;
       });
-
-      console.log("Updated stages in handleInputRange:", updatedStages);
 
       return updatedStages;
     });
