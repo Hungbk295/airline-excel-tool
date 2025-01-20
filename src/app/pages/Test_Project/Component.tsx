@@ -310,12 +310,7 @@ function TableComponent(props: IProps) {
                     </div>
                     <Input
                       placeholder={`Input for $${field}`}
-                      value={
-                        record.config?.[`data$${field}`]?.render == true || ""
-                          ? ""
-                          : record.config?.[`data$${field}`]?.render ||
-                            record.config?.[`data$${field}`]
-                      }
+                      value={record.config?.[`data$${field}`] || ""}
                     />
                   </div>
                 ) : (
@@ -372,8 +367,7 @@ function TableComponent(props: IProps) {
                   </div>
                 ) : record.config?.[`$${field}`] ? (
                   <div style={{ flexBasis: "70%", textAlign: "left" }}>
-                    {record.config?.[`data$${field}`]?.render ||
-                      record.config?.[`data$${field}`]}
+                    {record.config?.[`data$${field}`] || ""}
                   </div>
                 ) : (
                   <div style={{ flexBasis: "70%", textAlign: "left" }}>
