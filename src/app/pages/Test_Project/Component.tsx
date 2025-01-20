@@ -56,6 +56,19 @@ function TableComponent(props: IProps) {
 
   const columns = [
     {
+      title: "Step",
+      dataIndex: "Step",
+      key: "Step",
+      width: "10%",
+      render: (_, record) => {
+        return editingKey === record.key ? (
+          <Text>{record.key}</Text>
+        ) : (
+          <span>{record.key}</span>
+        );
+      },
+    },
+    {
       title: "Name",
       dataIndex: "name",
       key: "name",
@@ -298,13 +311,10 @@ function TableComponent(props: IProps) {
                     <Input
                       placeholder={`Input for $${field}`}
                       value={
-                        record.config?.[`data$${field}`]?.indexFrom ||
-                        record.config?.[`data$${field}`]?.indexTo
-                          ? record.config?.[`data$${field}`]?.render
-                          : record.config?.[`$${field}`] &&
-                              record.config?.[`$${field}`] !== true
-                            ? record.config?.[`$${field}`]
-                            : ""
+                        record.config?.[`data$${field}`]?.render == true || ""
+                          ? ""
+                          : record.config?.[`data$${field}`]?.render ||
+                            record.config?.[`data$${field}`]
                       }
                     />
                   </div>
