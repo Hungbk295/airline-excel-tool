@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import TableComponent from "./Component";
 import { allFields, configFieldsMap } from "../../../constants/testProject";
 
@@ -63,6 +63,7 @@ const TestProject = () => {
                   outputArtifact: stage.outputArtifactKey || null,
                   inputArtifact: stage.inputArtifactKey || null,
                 },
+                isSave: 1,
               };
 
               if (formattedStage.artifactKey.outputArtifact) {
@@ -243,9 +244,6 @@ const TestProject = () => {
     const createRender = (range, from, to) => {
       const fromIndex = dataList[`${range}_fromIndex`];
       const toIndex = dataList[`${range}_toIndex`];
-
-      console.log(fromIndex);
-
       const fromOutput =
         fromIndex !== undefined
           ? from
@@ -293,8 +291,6 @@ const TestProject = () => {
 
         return stage;
       });
-
-      console.log(prevStages);
 
       return updatedStages;
     });
@@ -355,11 +351,7 @@ const TestProject = () => {
 
       ["$toRange", "$fromRange"].forEach((key) => {
         if (stage.config?.[key] !== false) {
-          if (stage.config?.[`data${key}`]?.render) {
-            config = { ...config, [key]: stage.config?.[`data${key}`].render };
-          } else {
-            config = { ...config, [key]: stage.config?.[`data${key}`] };
-          }
+          config = { ...config, [key]: stage.config?.[`data${key}`] };
         }
       });
 
