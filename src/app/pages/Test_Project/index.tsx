@@ -222,7 +222,7 @@ const TestProject = () => {
         .filter((stage) => stage.key !== key)
         .map((stage) => ({
           ...stage,
-          step: stage.key > editingKey ? stage.key - 1 : stage.key,
+          key: stage.key > editingKey ? stage.key - 1 : stage.key,
         }));
     });
   };
@@ -234,8 +234,8 @@ const TestProject = () => {
     for (const range of ranges) {
       for (const suffix of suffixes) {
         const key = `${range}_${suffix}`;
-        if (record?.config[key]) {
-          dataList[key] = record?.config[key] || "";
+        if (record?.config?.[key] !== undefined) {
+          dataList[key] = record.config[key] || "";
         }
       }
     }
@@ -243,17 +243,29 @@ const TestProject = () => {
     const createRender = (range, from, to) => {
       const fromIndex = dataList[`${range}_fromIndex`];
       const toIndex = dataList[`${range}_toIndex`];
-      const fromOutput = fromIndex
-        ? `${from}{inputArtifact[${fromIndex}]['output'] + 1}`
-        : "";
-      const toOutput = toIndex
-        ? `: ${to}{inputArtifact[${toIndex}]['output']}`
-        : "";
 
+      console.log(fromIndex);
+
+      const fromOutput =
+        fromIndex !== undefined
+          ? from
+            ? `${from}{inputArtifact[${fromIndex}]['output'] + 1}`
+            : `{inputArtifact[${fromIndex}]['output'] + 1}`
+          : from || "";
+
+      const toOutput =
+        toIndex !== undefined
+          ? to
+            ? `: ${to}{inputArtifact[${toIndex}]['output']}`
+            : `{inputArtifact[${toIndex}]['output']}`
+          : to
+            ? `: ${to}`
+            : "";
       if (!fromOutput && !toOutput) {
         return record.config?.[`$${range}`];
       }
-      return `${fromOutput} ${toOutput}`;
+
+      return `${fromOutput}${toOutput}`;
     };
 
     setStages((prevStages) => {
@@ -289,6 +301,8 @@ const TestProject = () => {
 
         return stage;
       });
+
+      console.log(prevStages);
 
       return updatedStages;
     });
