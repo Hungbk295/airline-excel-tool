@@ -10,6 +10,7 @@ const TestProject = () => {
       type: "",
       artifactKey: { inputArtifact: "", outputArtifact: "" },
       config: {},
+      isSave: 0,
     },
   ]);
 
@@ -97,6 +98,7 @@ const TestProject = () => {
         type: "",
         artifactKey: { inputArtifact: "", outputArtifact: " " },
         config: "",
+        isSave: 0,
       },
     ]);
     setEditingKey(1);
@@ -110,6 +112,7 @@ const TestProject = () => {
       type: "",
       artifactKey: { inputArtifact: "", outputArtifact: "" },
       config: "",
+      isSave: 0,
     };
 
     const updatedStages = [...stages];
@@ -186,6 +189,12 @@ const TestProject = () => {
       handleOutputArtifact(record);
     }
 
+    setStages((prevStages) =>
+      prevStages.map((stage) =>
+        stage.key === record.key ? { ...stage, isSave: 1 } : stage
+      )
+    );
+
     if (editingKey !== null) {
       setEditingKey(null);
       setOriginalData(null);
@@ -196,7 +205,7 @@ const TestProject = () => {
   const handleCancel = () => {
     if (editingKey !== null) {
       const isNewStageEmpty = stages.some(
-        (stage) => stage.key === editingKey && !stage.type && !stage.config
+        (stage) => stage.key === editingKey && !stage.isSave
       );
 
       if (isNewStageEmpty) {
