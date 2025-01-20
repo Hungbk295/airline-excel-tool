@@ -285,16 +285,8 @@ const TestProject = () => {
             ...stage,
             config: {
               ...stage.config,
-              data$fromRange: {
-                indexFrom: dataList["fromRange_fromIndex"] || null,
-                indexTo: dataList["fromRange_toIndex"] || null,
-                render: $fromRenderData || "",
-              },
-              data$toRange: {
-                indexFrom: dataList["toRange_fromIndex"] || null,
-                indexTo: dataList["toRange_toIndex"] || null,
-                render: $toRenderData || "",
-              },
+              data$fromRange: $fromRenderData || "",
+              data$toRange: $toRenderData || "",
             },
           };
         }
