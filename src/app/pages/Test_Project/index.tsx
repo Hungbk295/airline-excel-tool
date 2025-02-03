@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TableComponent from "./Component";
 import { allFields, configFieldsMap } from "../../../constants/testProject";
+import { Form } from "antd";
 
 const TestProject = () => {
   const [stages, setStages] = useState([
@@ -14,10 +15,15 @@ const TestProject = () => {
     },
   ]);
 
+  const [resources, setResources] = useState<any>();
   const [editingKey, setEditingKey] = useState(null);
   const [originalData, setOriginalData] = useState(null);
   const [savedConfigs, setSavedConfigs] = useState({});
   const [listOutputArtifact, setListOutputArtifact] = useState([]);
+
+  const handleUpdateResources = (newResources: any) => {
+    setResources(newResources);
+  };
 
   const handleConfigName = (type) => {
     if (configFieldsMap[type]) {
@@ -76,6 +82,22 @@ const TestProject = () => {
 
             setStages(formattedStages);
             setEditingKey(null);
+          }
+          if (jsonData.resources) {
+            const formattedResources = Object.keys(jsonData.resources).reduce(
+              (acc, resourceType) => {
+                acc[resourceType] = Object.keys(
+                  jsonData.resources[resourceType]
+                ).reduce((resourceAcc, resourceKey) => {
+                  resourceAcc[resourceKey] =
+                    jsonData.resources[resourceType][resourceKey];
+                  return resourceAcc;
+                }, {});
+                return acc;
+              },
+              {}
+            );
+            setResources(formattedResources);
           } else {
             console.error('Invalid JSON structure: Missing "stages" array');
           }
@@ -397,9 +419,11 @@ const TestProject = () => {
   return (
     <TableComponent
       stages={stages}
+      resources={resources}
       editingKey={editingKey}
       configFieldsMap={configFieldsMap}
       listOutputArtifact={listOutputArtifact}
+      handleUpdateResources={handleUpdateResources}
       handleNewStage={handleNewStage}
       handleAddStage={handleAddStage}
       handleUpdateStage={handleUpdateStage}
