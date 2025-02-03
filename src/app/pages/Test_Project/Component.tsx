@@ -9,15 +9,26 @@ import {
   Switch,
   Typography,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import {
+  MinusCircleOutlined,
+  PlusOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 const { Option } = Select;
 const { Text } = Typography;
 
+interface ResourceData {
+  xlsx?: {
+    [key: string]: string;
+  };
+}
 interface IProps {
   stages: any[];
+  resources: ResourceData;
   editingKey: string;
   configFieldsMap: { [key: string]: any };
   listOutputArtifact: any[];
+  handleUpdateResources: (resources: ResourceData) => void;
   handleNewStage: () => void;
   handleAddStage: (index) => void;
   handleUpdateStage: (key, field, value) => void;
@@ -37,9 +48,11 @@ function TableComponent(props: IProps) {
 
   const {
     stages,
+    resources,
     editingKey,
     configFieldsMap,
     listOutputArtifact,
+    handleUpdateResources,
     handleNewStage,
     handleAddStage,
     handleUpdateStage,
@@ -53,6 +66,16 @@ function TableComponent(props: IProps) {
     handleInputRange,
     handleOutputArtifact,
   } = props;
+
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (resources) {
+      form.setFieldsValue({
+        xlsx: resources.xlsx ? Object.values(resources.xlsx) : [""],
+      });
+    }
+  }, [resources, form]);
 
   const columns = [
     {
@@ -134,7 +157,7 @@ function TableComponent(props: IProps) {
                     <span>
                       {record.config?.[`$${field}`] ? `$${field}` : field}
                     </span>
-                    {["fromRange", "toRange"].includes(field) && (
+                    {["fromRange", "toRange", "range"].includes(field) && (
                       <Switch
                         size="small"
                         style={{ cursor: "pointer" }}
@@ -188,131 +211,191 @@ function TableComponent(props: IProps) {
                     />
                   </div>
                 ) : record.config?.[`$${field}`] ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
+                  field != "range" ? (
                     <div
                       style={{
                         display: "flex",
+                        flexDirection: "column",
                         gap: "8px",
-                        alignItems: "center",
                       }}
                     >
-                      <Text style={{ width: "5%" }} strong>
-                        {"from"}
-                      </Text>
-                      <Input
-                        placeholder="Enter Column"
-                        value={record.config?.[`${field}_from`] || ""}
-                        onChange={(e) => {
-                          handleUpdateStage(record.key, "config", {
-                            ...record.config,
-                            [`${field}_from`]: e.target.value,
-                          });
-                          handleInputRange(record);
-                        }}
-                        style={{ width: "10%", flex: 1 }}
-                      />
-                      <Text strong style={{ display: "flex" }}>
-                        index
-                      </Text>
-                      <Select
-                        placeholder="Select Row"
-                        style={{ width: "40%" }}
-                        defaultValue={
-                          record.config?.[`data$${field}`]?.indexFrom
-                        }
-                        onClick={() => handleOutputArtifact(record)}
-                        onChange={(value) => {
-                          const updatedConfig = {
-                            ...record.config,
-                            [`${field}_fromIndex`]: value,
-                          };
-
-                          handleUpdateStage(
-                            record.key,
-                            "config",
-                            updatedConfig
-                          );
-
-                          handleInputRange({
-                            ...record,
-                            config: updatedConfig,
-                          });
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
                         }}
                       >
-                        {listOutputArtifact.map((option, index) => (
-                          <Select.Option key={index} value={option}>
-                            {option.label}
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text style={{ width: "5%" }} strong>
-                        {"To"}
-                      </Text>
-                      <Input
-                        placeholder="Enter Column"
-                        value={record.config?.[`${field}_to`] || ""}
-                        onClick={handleInputRange}
-                        onChange={(e) => {
-                          handleUpdateStage(record.key, "config", {
-                            ...record.config,
-                            [`${field}_to`]: e.target.value,
-                          });
-                          handleInputRange(record);
-                        }}
-                        style={{ width: "50%", flex: 1 }}
-                      />
-                      <Text strong style={{ display: "flex" }}>
-                        index
-                      </Text>
-                      <Select
-                        placeholder="Select Row"
-                        style={{ width: "40%" }}
-                        onClick={() => handleOutputArtifact(record)}
-                        defaultValue={record.config?.[`data$${field}`]?.indexTo}
-                        onChange={(value) => {
-                          const updatedConfig = {
-                            ...record.config,
-                            [`${field}_toIndex`]: value,
-                          };
+                        <Text style={{ width: "5%" }} strong>
+                          {"from"}
+                        </Text>
+                        <Input
+                          placeholder="Enter Column"
+                          value={record.config?.[`${field}_from`] || ""}
+                          onChange={(e) => {
+                            handleUpdateStage(record.key, "config", {
+                              ...record.config,
+                              [`${field}_from`]: e.target.value,
+                            });
+                            handleInputRange(record);
+                          }}
+                          style={{ width: "10%", flex: 1 }}
+                        />
+                        <Text strong style={{ display: "flex" }}>
+                          index
+                        </Text>
+                        <Select
+                          placeholder="Select Row"
+                          style={{ width: "40%" }}
+                          defaultValue={
+                            record.config?.[`data$${field}`]?.indexFrom
+                          }
+                          onClick={() => handleOutputArtifact(record)}
+                          onChange={(value) => {
+                            const updatedConfig = {
+                              ...record.config,
+                              [`${field}_fromIndex`]: value,
+                            };
 
-                          handleUpdateStage(
-                            record.key,
-                            "config",
-                            updatedConfig
-                          );
+                            handleUpdateStage(
+                              record.key,
+                              "config",
+                              updatedConfig
+                            );
 
-                          handleInputRange({
-                            ...record,
-                            config: updatedConfig,
-                          });
+                            handleInputRange({
+                              ...record,
+                              config: updatedConfig,
+                            });
+                          }}
+                        >
+                          {listOutputArtifact.map((option, index) => (
+                            <Select.Option key={index} value={option}>
+                              {option.label}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
                         }}
                       >
-                        {listOutputArtifact.map((option, index) => (
-                          <Select.Option key={index} value={option}>
-                            {option.label}
-                          </Select.Option>
-                        ))}
-                      </Select>
+                        <Text style={{ width: "5%" }} strong>
+                          {"To"}
+                        </Text>
+                        <Input
+                          placeholder="Enter Column"
+                          value={record.config?.[`${field}_to`] || ""}
+                          onClick={handleInputRange}
+                          onChange={(e) => {
+                            handleUpdateStage(record.key, "config", {
+                              ...record.config,
+                              [`${field}_to`]: e.target.value,
+                            });
+                            handleInputRange(record);
+                          }}
+                          style={{ width: "50%", flex: 1 }}
+                        />
+                        <Text strong style={{ display: "flex" }}>
+                          index
+                        </Text>
+                        <Select
+                          placeholder="Select Row"
+                          style={{ width: "40%" }}
+                          onClick={() => handleOutputArtifact(record)}
+                          defaultValue={
+                            record.config?.[`data$${field}`]?.indexTo
+                          }
+                          onChange={(value) => {
+                            const updatedConfig = {
+                              ...record.config,
+                              [`${field}_toIndex`]: value,
+                            };
+
+                            handleUpdateStage(
+                              record.key,
+                              "config",
+                              updatedConfig
+                            );
+
+                            handleInputRange({
+                              ...record,
+                              config: updatedConfig,
+                            });
+                          }}
+                        >
+                          {listOutputArtifact.map((option, index) => (
+                            <Select.Option key={index} value={option}>
+                              {option.label}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </div>
+                      <Input
+                        placeholder={`Input for $${field}`}
+                        value={record.config?.[`data$${field}`] || ""}
+                      />
                     </div>
-                    <Input
-                      placeholder={`Input for $${field}`}
-                      value={record.config?.[`data$${field}`] || ""}
-                    />
-                  </div>
+                  ) : (
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Input
+                          placeholder={`Input for $${field}`}
+                          value={record.config?.[`$${field}`] || ""}
+                          onChange={(e) => {
+                            handleUpdateStage(record.key, "config", {
+                              ...record.config,
+                              [`$${field}`]: e.target.value,
+                            });
+                          }}
+                          style={{ width: "30%" }}
+                        />
+                        <Select
+                          placeholder="Select Range Start"
+                          style={{ width: "30%" }}
+                          value={record.config?.[`${field}_start`] || ""}
+                          onChange={(value) => {
+                            handleUpdateStage(record.key, "config", {
+                              ...record.config,
+                              [`${field}_start`]: value,
+                            });
+                          }}
+                        >
+                          {listOutputArtifact.map((option, index) => (
+                            <Select.Option key={index} value={option}>
+                              {option.label}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                        <Select
+                          placeholder="Select Range End"
+                          style={{ width: "30%" }}
+                          value={record.config?.[`${field}_end`] || ""}
+                          onChange={(value) => {
+                            handleUpdateStage(record.key, "config", {
+                              ...record.config,
+                              [`${field}_end`]: value,
+                            });
+                          }}
+                        >
+                          {listOutputArtifact.map((option, index) => (
+                            <Select.Option key={index} value={option}>
+                              {option.label}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  )
                 ) : (
                   <Input
                     value={record.config?.[field] || ""}
@@ -521,6 +604,141 @@ function TableComponent(props: IProps) {
           Export To Json
         </Button>
       </div>
+      <Form
+        form={form}
+        initialValues={{
+          xlsx: resources?.xlsx ? Object.values(resources?.xlsx) : [""],
+        }}
+        style={{ width: "100%", textAlign: "center" }}
+        layout="vertical"
+        onFinish={(values) => {
+          const transformedData = {
+            resources: {
+              xlsx: values.xlsx.reduce((acc, value, index) => {
+                acc[`WORK_BOOK_${index + 1}`] = value;
+                return acc;
+              }, {}),
+            },
+          };
+          handleUpdateResources(transformedData.resources);
+
+          console.log("Submitted Values:", transformedData);
+        }}
+      >
+        <div
+          style={{
+            border: "1px solid #d9d9d9",
+            borderRadius: "8px",
+            padding: "16px",
+            marginBottom: "16px",
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Text
+            strong
+            style={{
+              width: "100px",
+              display: "flex",
+              marginRight: "8px",
+            }}
+          >
+            Xlsx:
+          </Text>
+          <Form.List name="xlsx">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field, index) => (
+                  <Form.Item key={field.key} style={{ width: "100%" }}>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <Text
+                        strong
+                        style={{
+                          width: "15%",
+                        }}
+                      >
+                        WORK_BOOK_{index + 1}:
+                      </Text>
+                      <Form.Item
+                        {...{
+                          name: field.name,
+                          fieldKey: field.fieldKey,
+                          validateTrigger: ["onChange", "onBlur"],
+                          noStyle: true,
+                        }}
+                      >
+                        <Input placeholder="  " style={{ flex: 1 }} />
+                      </Form.Item>
+                      {fields.length > 1 && (
+                        <MinusCircleOutlined
+                          style={{
+                            fontSize: "16px",
+                            color: "red",
+                            marginLeft: "8px",
+                          }}
+                          onClick={() => remove(field.name)}
+                        />
+                      )}
+                    </div>
+                  </Form.Item>
+                ))}
+                <Form.Item>
+                  <div
+                    style={{
+                      width: "85%",
+                      marginLeft: "15%",
+                    }}
+                  >
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      style={{ width: "100%" }}
+                      icon={<PlusOutlined />}
+                    >
+                      Add Workbook
+                    </Button>
+                  </div>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+          <Form.Item style={{ width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <Text strong style={{ width: "7%", marginRight: "8px" }}>
+                Variable:
+              </Text>
+              <Form.Item noStyle>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    width: "100%",
+                  }}
+                >
+                  <Input
+                    placeholder="Enter output artifact"
+                    style={{ width: "50%" }}
+                  />
+                  <Input
+                    placeholder="Enter output artifact"
+                    style={{ width: "50%" }}
+                  />
+                </div>
+              </Form.Item>
+            </div>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              style={{ marginTop: "16px", width: "100%" }}
+            >
+              Save
+            </Button>
+          </Form.Item>
+        </div>
+      </Form>
+
       <Table
         dataSource={stages}
         columns={columns}
