@@ -18,9 +18,10 @@ const { Option } = Select;
 const { Text } = Typography;
 
 interface ResourceData {
-  xlsx?: {
+  xlsx: {
     [key: string]: string;
   };
+  variable: string;
 }
 interface IProps {
   stages: any[];
@@ -73,6 +74,12 @@ function TableComponent(props: IProps) {
     if (resources) {
       form.setFieldsValue({
         xlsx: resources.xlsx ? Object.values(resources.xlsx) : [""],
+        variable: resources.variable
+          ? Object.entries(resources.variable).map(([key, value]) => ({
+              name: key,
+              value: value,
+            }))
+          : [{ name: "", value: "" }],
       });
     }
   }, [resources, form]);
@@ -607,22 +614,35 @@ function TableComponent(props: IProps) {
       <Form
         form={form}
         initialValues={{
-          xlsx: resources?.xlsx ? Object.values(resources?.xlsx) : [""],
+          xlsx: resources?.xlsx
+            ? Object.entries(resources.xlsx).map(([_, value]) => value)
+            : [""],
+          variable: resources?.variable
+            ? Object.entries(resources.variable).map(([key, value]) => ({
+                key,
+                value,
+              }))
+            : [{}],
         }}
-        style={{ width: "100%", textAlign: "center" }}
-        layout="vertical"
         onFinish={(values) => {
           const transformedData = {
             resources: {
-              xlsx: values.xlsx.reduce((acc, value, index) => {
-                acc[`WORK_BOOK_${index + 1}`] = value;
+              xlsx: values.xlsx.reduce(
+                (acc, value, index) => ({
+                  ...acc,
+                  [`WORK_BOOK_${index + 1}`]: value,
+                }),
+                {}
+              ),
+              variable: values.variable.reduce((acc, item) => {
+                if (item.name) {
+                  acc[item.name] = item.value;
+                }
                 return acc;
               }, {}),
             },
           };
           handleUpdateResources(transformedData.resources);
-
-          console.log("Submitted Values:", transformedData);
         }}
       >
         <div
@@ -645,88 +665,133 @@ function TableComponent(props: IProps) {
             Xlsx:
           </Text>
           <Form.List name="xlsx">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field, index) => (
-                  <Form.Item key={field.key} style={{ width: "100%" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <Text
-                        strong
-                        style={{
-                          width: "15%",
-                        }}
+            {(fields, { add, remove }) => {
+              return (
+                <>
+                  {fields.map((field) => (
+                    <Form.Item key={`xlsx-${field.key}-${field.name}`}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <Text strong style={{ width: "15%" }}>
+                          WORK_BOOK_{field.name + 1}:
+                        </Text>
+                        <Form.Item
+                          name={[field.name]}
+                          fieldKey={field.fieldKey}
+                          validateTrigger={["onChange", "onBlur"]}
+                          noStyle
+                        >
+                          <Input placeholder=" " style={{ flex: 1 }} />
+                        </Form.Item>
+                        {fields.length > 1 && (
+                          <MinusCircleOutlined
+                            style={{
+                              fontSize: "16px",
+                              color: "red",
+                              marginLeft: "8px",
+                            }}
+                            onClick={() => remove(field.name)}
+                          />
+                        )}
+                      </div>
+                    </Form.Item>
+                  ))}
+
+                  <Form.Item>
+                    <div
+                      style={{
+                        width: "85%",
+                        marginLeft: "15%",
+                      }}
+                    >
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        style={{ width: "100%" }}
+                        icon={<PlusOutlined />}
                       >
-                        WORK_BOOK_{index + 1}:
-                      </Text>
-                      <Form.Item
-                        {...{
-                          name: field.name,
-                          fieldKey: field.fieldKey,
-                          validateTrigger: ["onChange", "onBlur"],
-                          noStyle: true,
-                        }}
-                      >
-                        <Input placeholder="  " style={{ flex: 1 }} />
-                      </Form.Item>
-                      {fields.length > 1 && (
-                        <MinusCircleOutlined
-                          style={{
-                            fontSize: "16px",
-                            color: "red",
-                            marginLeft: "8px",
-                          }}
-                          onClick={() => remove(field.name)}
-                        />
-                      )}
+                        Add Workbook
+                      </Button>
                     </div>
                   </Form.Item>
-                ))}
-                <Form.Item>
-                  <div
-                    style={{
-                      width: "85%",
-                      marginLeft: "15%",
-                    }}
-                  >
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      style={{ width: "100%" }}
-                      icon={<PlusOutlined />}
-                    >
-                      Add Workbook
-                    </Button>
-                  </div>
-                </Form.Item>
-              </>
-            )}
+                </>
+              );
+            }}
           </Form.List>
           <Form.Item style={{ width: "100%" }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <Text strong style={{ width: "7%", marginRight: "8px" }}>
+            <div style={{ display: "flex", alignItems: "flex-start" }}>
+              <Text strong style={{ width: "15%" }}>
                 Variable:
               </Text>
-              <Form.Item noStyle>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "16px",
-                    width: "100%",
+
+              <div style={{ flex: 1 }}>
+                <Form.List name="variable">
+                  {(fields, { add, remove }) => {
+                    return (
+                      <>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "16px",
+                          }}
+                        >
+                          {fields.map((field) => (
+                            <div
+                              key={field.key}
+                              style={{ display: "flex", gap: "16px" }}
+                            >
+                              <Form.Item
+                                name={[field.key, "name"]}
+                                fieldKey={[field.fieldKey, "name"]}
+                                style={{ flex: 1 }}
+                              >
+                                <Input placeholder="Variable name" />
+                              </Form.Item>
+
+                              <Form.Item
+                                name={[field.name, "value"]}
+                                fieldKey={[field.fieldKey, "value"]}
+                                style={{ flex: 1 }}
+                              >
+                                <Input placeholder="Variable value" />
+                              </Form.Item>
+                              {fields.length > 1 && (
+                                <MinusCircleOutlined
+                                  style={{
+                                    fontSize: "16px",
+                                    color: "red",
+                                    marginLeft: "8px",
+                                  }}
+                                  onClick={() => remove(field.name)}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <Form.Item>
+                          <div
+                            style={{
+                              width: "100%",
+                            }}
+                          >
+                            <Button
+                              type="dashed"
+                              onClick={() => add()}
+                              style={{ width: "100%" }}
+                              icon={<PlusOutlined />}
+                            >
+                              Add Variable
+                            </Button>
+                          </div>
+                        </Form.Item>
+                      </>
+                    );
                   }}
-                >
-                  <Input
-                    placeholder="Enter output artifact"
-                    style={{ width: "50%" }}
-                  />
-                  <Input
-                    placeholder="Enter output artifact"
-                    style={{ width: "50%" }}
-                  />
-                </div>
-              </Form.Item>
+                </Form.List>
+              </div>
             </div>
           </Form.Item>
-
           <Form.Item>
             <Button
               type="primary"
