@@ -97,6 +97,8 @@ const TestProject = () => {
               },
               {}
             );
+            console.log(formattedResources);
+
             setResources(formattedResources);
           } else {
             console.error('Invalid JSON structure: Missing "stages" array');
